@@ -1,11 +1,11 @@
 package org.usfirst.frc.team5987.robot.subsystems;
 
 import org.usfirst.frc.team5987.robot.RobotMap;
+import org.usfirst.frc.team5987.robot.commands.OpenSolenoidCommand;
 
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
-import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.command.Subsystem;
 
 /**
@@ -22,6 +22,7 @@ public class PneumaticsSubsystem extends Subsystem {
 	public void initDefaultCommand() {
 		// Set the default command for a subsystem here.
 		// setDefaultCommand(new MySpecialCommand());
+		setDefaultCommand(new OpenSolenoidCommand());
 	}
 	
 	/**
@@ -43,6 +44,10 @@ public class PneumaticsSubsystem extends Subsystem {
 	public void startCompressor()
 	{
 		compressor.start();
+	}
+	public void stopCompressor()
+	{
+		compressor.stop();
 	}
 	/**
 	   * Read the current value of the solenoid.
