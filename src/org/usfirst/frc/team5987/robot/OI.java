@@ -13,8 +13,8 @@ public class OI {
     // number it is.
     // Joystick stick = new Joystick(port);
     // Button button = new JoystickButton(stick, buttonNumber);
-    Joystick leftStick = new Joystick(0);
-    Joystick rightStick = new Joystick(1);
+    public Joystick leftStick = new Joystick(0);
+    public Joystick rightStick = new Joystick(1);
     
     // There are a few additional built in buttons you can use. Additionally,
     // by subclassing Button you can create custom triggers and bind those to

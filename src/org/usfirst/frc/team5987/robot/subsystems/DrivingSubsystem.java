@@ -36,6 +36,8 @@ public class DrivingSubsystem extends Subsystem {
      */
     public void drive(double leftValue, double rightValue){
     	robotDrive.tankDrive(leftValue, rightValue);
+    	SmartDashboard.putNumber("leftEncoder", -leftEncoder.getDistance());
+    	SmartDashboard.putNumber("rightEncoder", rightEncoder.getDistance());
     }
     public double getLeftEncoder() {	
     	SmartDashboard.putNumber("leftEncoder", -leftEncoder.getDistance());
