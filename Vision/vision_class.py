@@ -21,15 +21,15 @@ class cam:
         elif value_type is bool:
             self.table.putBoolean(key, value)
 
-    def get_item(self, key):
+    def get_item(self, key, default_value):
         # Get a value from SmartDashboard
         try:
-            res = self.table.getString(key)
+            res = self.table.getString(key, default_value)
         except:
             try:
-                res = self.table.getNumber(key)
+                res = self.table.getNumber(key, default_value)
             except:
-                res = self.table.getBoolean(key)
+                res = self.table.getBoolean(key, default_value)
         return res
 
     def set_range(self):
