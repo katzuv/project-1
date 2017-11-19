@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.command.Subsystem;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  *
@@ -18,11 +19,11 @@ public class PneumaticsSubsystem extends Subsystem {
 
 	DoubleSolenoid solenoid = new DoubleSolenoid(RobotMap.solenoidForward, RobotMap.solenoidReverse);
 	Compressor compressor = new Compressor(RobotMap.compressor);
-
+	double distance = SmartDashboard.getNumber("distance", 110);
 	public void initDefaultCommand() {
 		// Set the default command for a subsystem here.
 		// setDefaultCommand(new MySpecialCommand());
-		setDefaultCommand(new OpenSolenoidCommand());
+		setDefaultCommand(new OpenSolenoidCommand(distance));
 	}
 	
 	/**

@@ -1,7 +1,5 @@
 package org.usfirst.frc.team5987.robot;
 
-import org.usfirst.frc.team5987.robot.commands.OpenSolenoidCommand;
-
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.buttons.Button;
 import edu.wpi.first.wpilibj.buttons.JoystickButton;
@@ -40,9 +38,4 @@ public class OI {
     // until it is finished as determined by it's isFinished method.
     // button.whenReleased(new ExampleCommand());
     
-    public OI()
-    {
-    	openSolenoid.whenPressed(new OpenSolenoidCommand());
-    }
 }
-
