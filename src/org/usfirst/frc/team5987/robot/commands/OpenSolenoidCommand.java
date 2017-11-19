@@ -1,16 +1,17 @@
 package org.usfirst.frc.team5987.robot.commands;
 
 import org.usfirst.frc.team5987.robot.Robot;
-import org.usfirst.frc.team5987.robot.subsystems.PneumaticsSubsystem;
 
 import edu.wpi.first.wpilibj.command.Command;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  *
  */
 public class OpenSolenoidCommand extends Command {
 
-    public OpenSolenoidCommand() {
+	SmartDashboard dashboard = new SmartDashboard();
+    public OpenSolenoidCommand(double distance) {
         // Use requires() here to declare subsystem dependencies
         // eg. requires(chassis);
     	requires(Robot.pneumaticsSubsystem);
@@ -23,16 +24,17 @@ public class OpenSolenoidCommand extends Command {
 
     // Called repeatedly when this Command is scheduled to run
     protected void execute() {
-    		Robot.pneumaticsSubsystem.forward();	    	
+    			    	
     }
 
     // Make this return true when this Command no longer needs to run execute()
     protected boolean isFinished() {
-        return false;
+        return SmartDashboard.getNumber("distance", 110) < 100;
     }
 
     // Called once after isFinished returns true
     protected void end() {
+    	Robot.pneumaticsSubsystem.forward();
     	Robot.pneumaticsSubsystem.stopCompressor();
     }
 
