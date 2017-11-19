@@ -37,6 +37,10 @@ public class Robot extends IterativeRobot {
         chooser.addDefault("Default Auto", new ExampleCommand());
 //        chooser.addObject("My Auto", new MyAutoCommand());
         SmartDashboard.putData("Auto mode", chooser);
+        SmartDashboard.putNumber("Pid: p ", RobotMap.ConstantP);
+        SmartDashboard.putNumber("Pid: i ", RobotMap.ConstantI);
+        SmartDashboard.putNumber("Pid: d ", RobotMap.ConstantD);
+
     }
 	
 	/**
@@ -99,6 +103,7 @@ public class Robot extends IterativeRobot {
      */
     public void teleopPeriodic() {
         Scheduler.getInstance().run();
+        driveSubsystem.drive(oi.leftStick.getY(), oi.rightStick.getY());
     }
     
     /**
