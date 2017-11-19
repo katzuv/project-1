@@ -1,10 +1,11 @@
 package org.usfirst.frc.team5987.robot.subsystems;
 
+import org.usfirst.frc.team5987.robot.Robot;
 import org.usfirst.frc.team5987.robot.RobotMap;
-
+import com.kauailabs.navx.frc.AHRS;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.RobotDrive;
-import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -12,7 +13,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  *
  */
 public class DrivingSubsystem extends Subsystem {
-    
+	AHRS ahrs = Robot.ahrs;
 	static RobotDrive robotDrive;
 	
 	private static Encoder leftEncoder;
@@ -48,5 +49,21 @@ public class DrivingSubsystem extends Subsystem {
     	SmartDashboard.putNumber("rightEncoder", rightEncoder.getDistance());
     	return rightEncoder.getDistance();
     }
+    
+    public double getAngle() {
+		return ahrs.getAngle();
+
+	}
+	public double limit(double minLimit, double maxLimit, double val) {
+		if (val < minLimit)
+			return minLimit;
+		if (val > maxLimit)
+			return maxLimit;
+		return val;
+	}
+
+	public void resetNavX() {
+		ahrs.reset();
+	}
 }
 
