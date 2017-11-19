@@ -1,7 +1,5 @@
 package org.usfirst.frc.team5987.robot;
 
-import edu.wpi.first.wpilibj.Sendable;
-
 /**
  * The RobotMap is a mapping from the ports sensors and actuators are wired into
  * to a variable name. This provides flexibility changing wiring, makes checking
@@ -27,4 +25,11 @@ public class RobotMap {
 	public static double ConstantI = 0;
 	public static double ConstantD = 0;
 
+    public static int solenoidForward = 0;
+    public static int solenoidReverse = 1;
+    public static int compressor = 6;
+    // If you are using multiple modules, make sure to define both the port
+    // number and the module. For example you with a rangefinder:
+    // public static int rangefinderPort = 1;
+    // public static int rangefinderModule = 1;
 }
