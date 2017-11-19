@@ -20,14 +20,16 @@ public class RobotMap {
 	
 	public static int rightDriveChanelA =6;
 	public static int rightDriveChanelB = 7;
-	
-	public static double ConstantP = 0;
+
+	public static double ConstantP = 0.1;
 	public static double ConstantI = 0;
 	public static double ConstantD = 0;
 
     public static int solenoidForward = 0;
     public static int solenoidReverse = 1;
     public static int compressor = 6;
+    
+    public static double distanceFromCenter = 30;
     // If you are using multiple modules, make sure to define both the port
     // number and the module. For example you with a rangefinder:
     // public static int rangefinderPort = 1;
