@@ -33,11 +33,9 @@ class cam:
         return res
 
     def set_range(self):
-        # Find the HSV range of an object in the center
-        des_area = self.get_item("Desired Area")
-        self.upper_range = (255, 255, 255)
-        self.lower_range = (0, 0, 0)
-        # Needs the find contour functions
+        file=open("Ace.acpf",'r')
+        exec(file.read())
+        file.close()
 
     def get_contour(self):
         # Master function to getting all the details about the biggest (main) contour
