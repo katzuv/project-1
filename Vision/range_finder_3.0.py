@@ -6,7 +6,6 @@ minV=255
 maxH=0
 maxS=0
 maxV=0
-
 while True:
     _, frame=cam.read()
     cv2.imshow("frame",frame)
@@ -28,7 +27,7 @@ while True:
                     maxS=pixel[1]
                 if pixel[2] > maxV:
                     maxV=pixel[2]
-        # Writes values to a file that the Vision Class can read from
+        # Writes valueqs to a file that the Vision Class can read from
         file=open("Ace.acpf",'w')
         file.write("self.lower_range,self.upper_range = ({},{},{}),({},{},{})".format(minH,minS,minV,maxH,maxS,maxV))
         file.close()

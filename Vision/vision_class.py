@@ -9,14 +9,21 @@ class Vision:
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
         self.set_range()
         self.mask = cv2.inRange(self.hsv, self.lower_range, self.upper_range)
-        _, self.contours, _ = cv2.findContours(self.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        _, contours, _ = cv2.findContours(self.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        self.contours=list(contours)
+        self.hulls = []
         # Initialize SmartDashboard
         NetworkTable.initialize(server="roborio-{}-frc.local".format(5987))
         self.table = NetworkTable.getTable('SmartDashboard')
-        self.set_item("Command", "")
-        self.set_item("Draw contours", False)
-        self.set_item("Draw hulls", False)
-        self.set_item("DiRode iterations", 3)
+        # NetworkTable.initialize(server='192.168.13.75')
+        # self.table = NetworkTable.getTable("ACoolTable")
+        file = open('Values.val','r')
+        exec(file.read())
+        file.close()
+        self.set_item("Command", self.command_s)
+        self.set_item("Draw contours", self.draw_contours_b)
+        self.set_item("Draw hulls", self.draw_hulls_b)
+        self.set_item("DiRode iterations", self.dirode_iterations_i)
 
 
     def set_item(self, key, value):
@@ -41,18 +48,18 @@ class Vision:
         return res
 
     def set_range(self):
-        # Retrieves the range written in "Ace" which was written there by Range Finder
+        # Retrieves the range written in "Ace" which was written there by Range Finder 3.0
         file = open("Ace.acpf", 'r')
         exec(file.read())
         file.close()
 
     def draw_contours(self):
         # Draws contours on the frame, if asked so on SmartDashboard
-        if len(self.contours) > 0 and self.get_item("Draw contours", False):
+        if len(self.contours) > 0 and self.get_item("Draw contours", self.draw_contours_b):
             for c in self.contours:
                 cv2.drawContours(self.frame, c, -1, (255, 255, 255), 4)
         # Draws hulls on the frame, if asked so on SmartDashboard
-        if len(self.hulls) > 0 and self.get_item("Draw hulls", False):
+        if len(self.hulls) > 0 and self.get_item("Draw hulls", self.draw_hulls_b):
             for h in self.hulls:
                 cv2.drawContours(self.frame, h, -1, (255, 255, 255), 4)
 
@@ -63,14 +70,18 @@ class Vision:
             [1, 1, 1],
             [0, 1, 0]
         ])
-        cv2.dilate(self.mask, kernel, iterations = self.get_item("DiRode iterations", 3))
-        cv2.erode(self.mask, kernel, iterations = self.get_item("DiRode iterations", 3))
+        cv2.dilate(self.mask, kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
+        cv2.erode(self.mask, kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
 
     # All functions below filter contours based on a trait and a range set in SmartDashboard
     def area(self, l, u):
-        for c in self.contours:
-            if not (u > cv2.contourArea(c) > l):
-                self.contours.remove(c)
+        print(str(len(self.contours)))
+        if len(self.contours) > 0:
+            for c in range(0, len(self.contours)):
+                area = cv2.contourArea(self.contours[c])
+                print(str(c))
+                if u < area or area < l:
+                    self.contours.pop(c)
     def bounding_rect(self, l, u):
         for c in self.contours:
             if not (u > cv2.boundingRect(c) > l):
@@ -81,43 +92,37 @@ class Vision:
                 self.contours.remove(c)
     def extent(self, l, u):
         for c in self.contours:
-            if not (u > float(cv2.contourArea(c)) / cv2.boundingRect(c) > l):
+            _, _, w, h = cv2.boundingRect(c)
+            rect_area = w*h
+            if u < cv2.contourArea(c)/rect_area or cv2.contourArea(c)/rect_area < l:
                 self.contours.remove(c)
     def hull(self, l, u):
         # Adds a list of hulls, which can be drawn like contours
-        self.hulls = []
         for c in self.contours:
-            if not (u > float(cv2.contourArea(c)) / cv2.contourArea(cv2.convexHull(c)) > l):
+            if not (u > cv2.contourArea(c) / cv2.contourArea(cv2.convexHull(c)) > l):
                 self.contours.remove(c)
                 # Adds a hull to the list only if it fits our parameters
                 self.hulls.append(cv2.convexHull(c))
 
     def get_contours(self):
         # Executes a command line from SmartDashboard
-        command = self.get_item("Command", "")
+        command = self.get_item("Command", self.command_s)
         functions = command.split(";")
-        try:
-            for fun in functions:
-                exec(fun)
-        except:
-            self.set_item("Command", "Not valid")
+        for fun in functions:
+            exec("self."+fun)
 
-    def __main__(self):
-        # Repeatedly reads the next frame, turns it into an HSV mask, and finds contours
-        _, self.frame = self.cam.read()
-        self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
-        self.mask = cv2.inRange(self.hsv, self.lower_range, self.upper_range)
-        _, self.contours, _ = cv2.findContours(self.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-        self.get_contours()
-        self.draw_contours()
-
-        cv2.imshow("Frame", self.frame)
-        cv2.imshow("Mask", self.mask)
 vision = Vision()
-vision.__init__()
 while True:
-    vision.__main__()
+    # Repeatedly reads the next frame, turns it into an HSV mask, and finds contours
+    _, vision.frame = vision.cam.read()
+    vision.hsv = cv2.cvtColor(vision.frame, cv2.COLOR_BGR2HSV)
+    vision.mask = cv2.inRange(vision.hsv, vision.lower_range, vision.upper_range)
+    _, contours, _ = cv2.findContours(vision.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    vision.contours=list(contours)
+    vision.get_contours()
+    vision.draw_contours()
+    cv2.imshow("Frame", vision.frame)
+    cv2.imshow("Mask", vision.mask)
     key = cv2.waitKey(1)
     if key == ord("q"):
         break

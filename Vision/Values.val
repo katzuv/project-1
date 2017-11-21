@@ -1,0 +1,4 @@
+self.command_s = "area(1000, 9001)"
+self.draw_contours_b = True
+self.draw_hulls_b = False
+self.dirode_iterations_i = 3
