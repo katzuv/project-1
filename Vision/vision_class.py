@@ -56,12 +56,18 @@ class Vision:
     def draw_contours(self):
         # Draws contours on the frame, if asked so on SmartDashboard
         if len(self.contours) > 0 and self.get_item("Draw contours", self.draw_contours_b):
-            for c in self.contours:
-                cv2.drawContours(self.frame, c, -1, (255, 0, 0), 3)
-        # Draws hulls on the frame, if asked so on SmartDashboard
-        if len(self.hulls) > 0 and self.get_item("Draw hulls", self.draw_hulls_b):
-            for h in self.hulls:
-                cv2.drawContours(self.frame, h, -1, (0, 255, 0), 6)
+            for x in range(0, len(self.contours)):
+                cv2.drawContours(self.frame, self.contours[x], -1, (255, 0, 0), 3)
+                # Draws hulls on the frame, if asked so on SmartDashboard
+                if len(self.hulls) > 0 and self.get_item("Draw hulls", self.draw_hulls_b):
+                    defects = cv2.convexityDefects(self.contours[x], self.hulls[x])
+                    for i in range(defects.shape[0]):
+                        s, e, f, d = defects[i, 0]
+                        start = tuple(self.contours[x][s][0])
+                        end = tuple(self.contours[x][e][0])
+                        far = tuple(self.contours[x][f][0])
+                        cv2.line(self.frame, start, end, [0, 255, 0], 2)
+                        cv2.circle(self.frame, far, 5, [0, 0, 255], -1)
 
     def dirode(self):
         # Dialates and erodes the mask to reduce static and make the image clearer
@@ -111,7 +117,7 @@ class Vision:
             if (u > cv2.contourArea(c) / cv2.contourArea(cv2.convexHull(c)) > l):
                 possible_fit.append(c)
                 # Adds a hull to the list only if it fits our parameters
-                self.hulls.append(cv2.convexHull(c))
+                self.hulls.append(cv2.convexHull(c, returnPoints=False))
         self.contour = possible_fit
 
     def get_contours(self):
