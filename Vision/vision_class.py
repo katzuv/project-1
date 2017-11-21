@@ -4,12 +4,12 @@ from networktables import NetworkTable
 class Vision:
     def __init__(self):
         # Initialize camera and first frame reading
-        self.cam = cv2.VideoCapture(0)
+        self.cam = cv2.VideoCapture(1)
         _, self.frame = self.cam.read()
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
         self.set_range()
         self.mask = cv2.inRange(self.hsv, self.lower_range, self.upper_range)
-        _, contours, _ = cv2.findContours(self.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        _, contours, _ = cv2.findContours(self.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         self.contours=list(contours)
         self.hulls = []
         # Initialize SmartDashboard
@@ -57,11 +57,11 @@ class Vision:
         # Draws contours on the frame, if asked so on SmartDashboard
         if len(self.contours) > 0 and self.get_item("Draw contours", self.draw_contours_b):
             for c in self.contours:
-                cv2.drawContours(self.frame, c, -1, (255, 255, 255), 4)
+                cv2.drawContours(self.frame, c, -1, (255, 0, 0), 3)
         # Draws hulls on the frame, if asked so on SmartDashboard
         if len(self.hulls) > 0 and self.get_item("Draw hulls", self.draw_hulls_b):
             for h in self.hulls:
-                cv2.drawContours(self.frame, h, -1, (255, 255, 255), 4)
+                cv2.drawContours(self.frame, h, -1, (0, 255, 0), 6)
 
     def dirode(self):
         # Dialates and erodes the mask to reduce static and make the image clearer
@@ -81,17 +81,20 @@ class Vision:
                 if u > cv2.contourArea(c) > l:
                     possible_fit.append(c)
             self.contours=possible_fit
-
     def bounding_rect(self, l, u):
-            possible_fit = []
+        possible_fit = []
+        if len(self.contours) > 0:
             for c in self.contours:
                 if u > cv2.boundingRect(c) > l:
                     possible_fit.append(c)
             self.contours=possible_fit
     def bounding_circ(self, l, u):
-        for c in self.contours:
-            if not (u > cv2.minEnclosingCircle(c) > l):
-                self.contours.remove(c)
+        possible_fit = []
+        if len(self.contours) > 0:
+            for c in self.contours:
+                if u > cv2.minEnclosingCircle(c) > l:
+                    possible_fit.append(c)
+            self.contours=possible_fit
     def extent(self, l, u):
         possible_fit = []
         for c in self.contours:
@@ -102,18 +105,22 @@ class Vision:
         self.contours = possible_fit
     def hull(self, l, u):
         # Adds a list of hulls, which can be drawn like contours
+        self.hulls.clear()
+        possible_fit = []
         for c in self.contours:
-            if not (u > cv2.contourArea(c) / cv2.contourArea(cv2.convexHull(c)) > l):
-                self.contours.remove(c)
+            if (u > cv2.contourArea(c) / cv2.contourArea(cv2.convexHull(c)) > l):
+                possible_fit.append(c)
                 # Adds a hull to the list only if it fits our parameters
                 self.hulls.append(cv2.convexHull(c))
+        self.contour = possible_fit
 
     def get_contours(self):
         # Executes a command line from SmartDashboard
         command = self.get_item("Command", self.command_s)
         functions = command.split(";")
-        for fun in functions:
-            exec("self."+fun)
+        if len(functions) > 0:
+            for fun in functions:
+                exec("self."+fun)
 
 vision = Vision()
 while True:
@@ -121,7 +128,7 @@ while True:
     _, vision.frame = vision.cam.read()
     vision.hsv = cv2.cvtColor(vision.frame, cv2.COLOR_BGR2HSV)
     vision.mask = cv2.inRange(vision.hsv, vision.lower_range, vision.upper_range)
-    _, contours, _ = cv2.findContours(vision.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    _, contours, _ = cv2.findContours(vision.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     vision.contours=list(contours)
     vision.get_contours()
     vision.draw_contours()
