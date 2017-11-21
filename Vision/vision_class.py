@@ -7,11 +7,17 @@ class Vision:
         self.cam = cv2.VideoCapture(0)
         _, self.frame = self.cam.read()
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
+        self.set_range()
         self.mask = cv2.inRange(self.hsv, self.lower_range, self.upper_range)
         _, self.contours, _ = cv2.findContours(self.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         # Initialize SmartDashboard
         NetworkTable.initialize(server="roborio-{}-frc.local".format(5987))
         self.table = NetworkTable.getTable('SmartDashboard')
+        self.set_item("Command", "")
+        self.set_item("Draw contours", False)
+        self.set_item("Draw hulls", False)
+        self.set_item("DiRode iterations", 3)
+
 
     def set_item(self, key, value):
         # Add a value to SmartDashboard
@@ -88,14 +94,13 @@ class Vision:
 
     def get_contours(self):
         # Executes a command line from SmartDashboard
-        try:
-            command = self.get_item("command")
-        except:
-            command = ''
-            self.set_item("command", "not valid")
+        command = self.get_item("Command", "")
         functions = command.split(";")
-        for fun in functions:
-            exec(fun)
+        try:
+            for fun in functions:
+                exec(fun)
+        except:
+            self.set_item("Command", "Not valid")
 
     def __main__(self):
         # Repeatedly reads the next frame, turns it into an HSV mask, and finds contours
