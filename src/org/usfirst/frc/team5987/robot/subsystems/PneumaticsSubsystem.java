@@ -18,7 +18,6 @@ public class PneumaticsSubsystem extends Subsystem {
 
 	DoubleSolenoid solenoid = new DoubleSolenoid(RobotMap.solenoidForward, RobotMap.solenoidReverse);
 	Compressor compressor = new Compressor(RobotMap.compressor);
-	double distance = SmartDashboard.getNumber("distance", 110);
 	public void initDefaultCommand() {
 		// Set the default command for a subsystem here.
 		// setDefaultCommand(new MySpecialCommand());
@@ -32,10 +31,18 @@ public class PneumaticsSubsystem extends Subsystem {
 	{
 		solenoid.set(DoubleSolenoid.Value.kForward);
 	}
+	/**
+	   * Set the value of a solenoid to off.
+	   *
+	   */
 	public void off()
 	{
 		solenoid.set(DoubleSolenoid.Value.kOff);
 	}
+	/**
+	   * Set the value of a solenoid to reverse.
+	   *
+	   */
 	public void reverse()
 	{
 		solenoid.set(DoubleSolenoid.Value.kReverse);
@@ -55,6 +62,25 @@ public class PneumaticsSubsystem extends Subsystem {
 	   */
 	public Value getValue()
 	{
-		return solenoid.get();
+		Value value = solenoid.get();
+		boolean forward = false;
+		boolean reverse = false;
+		switch (value) {
+	      case kOff:
+	        forward = false;
+	        reverse = false;
+	        break;
+	      case kForward:
+	        forward = true;
+	        reverse = false;
+	        break;
+	      case kReverse:
+	        forward = false;
+	        reverse = true;
+	        break;
+		}
+		SmartDashboard.putBoolean("forward", forward);
+		SmartDashboard.putBoolean("reverse", reverse);
+	    return value;
 	}
 }

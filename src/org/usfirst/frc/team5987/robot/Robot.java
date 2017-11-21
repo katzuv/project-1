@@ -8,7 +8,6 @@ import org.usfirst.frc.team5987.robot.subsystems.PneumaticsSubsystem;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
-import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -26,7 +25,7 @@ public class Robot extends IterativeRobot {
 	public static OI oi;
 
 	Command autonomousCommand;
-	SendableChooser chooser;
+//	SendableChooser chooser;
 
 	/**
 	 * This function is run when the robot is first started up and should be
@@ -34,11 +33,11 @@ public class Robot extends IterativeRobot {
 	 */
 	public void robotInit() {
 		oi = new OI();
-		chooser = new SendableChooser();
-		chooser.addDefault("Default Auto", new ExampleCommand());
-		// chooser.addObject("My Auto", new MyAutoCommand());
-		SmartDashboard.putData("Auto mode", chooser);
-		Robot.pneumaticsSubsystem.startCompressor();
+//		chooser = new SendableChooser();
+//		chooser.addDefault("Default Auto", new ExampleCommand());
+//		 chooser.addObject("My Auto", new MyAutoCommand());
+//		SmartDashboard.putData("Auto mode", chooser);
+		pneumaticsSubsystem.startCompressor();
 	}
 
 	/**
@@ -47,7 +46,7 @@ public class Robot extends IterativeRobot {
 	 * the robot is disabled.
 	 */
 	public void disabledInit() {
-		Robot.pneumaticsSubsystem.stopCompressor();
+		pneumaticsSubsystem.stopCompressor();
 	}
 
 	public void disabledPeriodic() {
@@ -66,7 +65,7 @@ public class Robot extends IterativeRobot {
 	 * to the switch structure below with additional strings & commands.
 	 */
 	public void autonomousInit() {
-		autonomousCommand = (Command) chooser.getSelected();
+//		autonomousCommand = (Command) chooser.getSelected();
 
 		/*
 		 * String autoSelected = SmartDashboard.getString("Auto Selector",
@@ -107,6 +106,6 @@ public class Robot extends IterativeRobot {
 	 * This function is called periodically during test mode
 	 */
 	public void testPeriodic() {
-		LiveWindow.run();
+		//LiveWindow.run();
 	}
 }
