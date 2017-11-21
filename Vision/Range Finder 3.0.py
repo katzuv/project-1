@@ -1,5 +1,4 @@
 import cv2
-import numpy as np
 cam = cv2.VideoCapture(0)
 minH=255
 minS=255
@@ -16,6 +15,7 @@ while True:
     if key == ord('q'):
         for row in hsv:
             for pixel in row:
+                # Goes through every pixel in the frame and finds the lowest and highest values
                 if pixel[0] < minH:
                     minH=pixel[0]
                 if pixel[1] < minS:
@@ -28,7 +28,8 @@ while True:
                     maxS=pixel[1]
                 if pixel[2] > maxV:
                     maxV=pixel[2]
+        # Writes values to a file that the Vision Class can read from
         file=open("Ace.acpf",'w')
-        file.write( "self.lower_range,self.upper_range = ({},{},{}),({},{},{})".format(minH,minS,minV,maxH,maxS,maxV))
+        file.write("self.lower_range,self.upper_range = ({},{},{}),({},{},{})".format(minH,minS,minV,maxH,maxS,maxV))
         file.close()
         break

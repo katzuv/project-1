@@ -2,11 +2,14 @@ import cv2
 import numpy as np
 from networktables import NetworkTable
 
-class cam:
+class Vision:
     def __init__(self):
         # Initialize camera and first frame reading
         self.cam = cv2.VideoCapture(0)
-        _, self.frame = cam.read()
+        _, self.frame = self.cam.read()
+        self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
+        self.mask = cv2.inRange(self.hsv, self.lower_range, self.upper_range)
+        _, self.contours, _ = cv2.findContours(self.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         # Initialize SmartDashboard
         NetworkTable.initialize(server="roborio-{}-frc.local".format(5987))
         self.table = NetworkTable.getTable('SmartDashboard')
@@ -33,29 +36,70 @@ class cam:
         return res
 
     def set_range(self):
-        file=open("Ace.acpf",'r')
+        # Retrieves the range written in "Ace" which was written there by Range Finder
+        file = open("Ace.acpf", 'r')
         exec(file.read())
         file.close()
 
-    def get_contour(self):
-        # Master function to getting all the details about the biggest (main) contour
-        hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv, self.lower_range, self.upper_range)
-        _, contours, _ = cv2.findContours(mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        if len(contours) > 0:
-            the_one_and_only = max(contours, key=cv2.contourArea)
+    def draw_contours(self):
+        # Draws contours on the frame, if asked so on SmartDashboard
+        if len(self.contours) > 0 and self.get_item("Draw contours", False):
+            for c in self.contours:
+                cv2.drawContours(self.frame, c, -1, (255, 255, 255), 4)
+        # Draws hulls on the frame, if asked so on SmartDashboard
+        if len(self.hulls) > 0 and self.get_item("Draw hulls", False):
+            for h in self.hulls:
+                cv2.drawContours(self.frame, h, -1, (255, 255, 255), 4)
 
-        def area():
-            return cv2.contourArea(the_one_and_only)
-        def bounding_rect():
-            return cv2.boundingRect(the_one_and_only)
-        def bounding_circ():
-            return cv2.minEnclosingCircle(the_one_and_only)
-        def extent():
-            return float(area()) / bounding_rect()
-        def hull():
-            return cv2.convexHull(the_one_and_only)
-        def hull_area():
-            return cv2.contourArea(hull())
-        def solidity():
-            return float(area()) / hull_area()
+    def dirode(self):
+        # Dialates and erodes the mask to reduce static and make the image clearer
+        kernel = np.zeros((5, 5), dtype = np.uint8)
+        cv2.dilate(self.mask, kernel, iterations = self.get_item("DiRode iterations", 3))
+        cv2.erode(self.mask, kernel, iterations = self.get_item("DiRode iterations", 3))
+
+    # All functions below filter contours based on a trait and a range set in SmartDashboard
+    def area(self, l, u):
+        for c in self.contours:
+            if not (u > cv2.contourArea(c) > l):
+                self.contours.remove(c)
+    def bounding_rect(self, l, u):
+        for c in self.contours:
+            if not (u > cv2.boundingRect(c) > l):
+                self.contours.remove(c)
+    def bounding_circ(self, l, u):
+        for c in self.contours:
+            if not (u > cv2.minEnclosingCircle(c) > l):
+                self.contours.remove(c)
+    def extent(self, l, u):
+        for c in self.contours:
+            if not (u > float(cv2.contourArea(c)) / cv2.boundingRect(c) > l):
+                self.contours.remove(c)
+    def hull(self, l, u):
+        # Adds a list of hulls, which can be drawn like contours
+        self.hulls = []
+        for c in self.contours:
+            if not (u > float(cv2.contourArea(c)) / cv2.contourArea(cv2.convexHull(c)) > l):
+                self.contours.remove(c)
+                # Adds a hull to the list only if it fits our parameters
+                self.hulls.append(cv2.convexHull(c))
+
+    def get_contours(self):
+        # Executes a command line from SmartDashboard
+        try:
+            command = self.get_item("command")
+        except:
+            command = ''
+            self.set_item("command", "not valid")
+        functions = command.split(";")
+        for fun in functions:
+            exec(fun)
+
+    def __main__(self):
+        # Repeatedly reads the next frame, turns it into an HSV mask, and finds contours
+        _, self.frame = self.cam.read()
+        self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
+        self.mask = cv2.inRange(self.hsv, self.lower_range, self.upper_range)
+        _, self.contours, _ = cv2.findContours(self.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        self.get_contours()
+        self.draw_contours()
