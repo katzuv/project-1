@@ -75,27 +75,31 @@ class Vision:
 
     # All functions below filter contours based on a trait and a range set in SmartDashboard
     def area(self, l, u):
-        print(str(len(self.contours)))
         if len(self.contours) > 0:
-            for c in range(0, len(self.contours)):
-                area = cv2.contourArea(self.contours[c])
-                print(str(c))
-                if u < area or area < l:
-                    self.contours.pop(c)
+            possible_fit = []
+            for c in self.contours:
+                if u > cv2.contourArea(c) > l:
+                    possible_fit.append(c)
+            self.contours=possible_fit
+
     def bounding_rect(self, l, u):
-        for c in self.contours:
-            if not (u > cv2.boundingRect(c) > l):
-                self.contours.remove(c)
+            possible_fit = []
+            for c in self.contours:
+                if u > cv2.boundingRect(c) > l:
+                    possible_fit.append(c)
+            self.contours=possible_fit
     def bounding_circ(self, l, u):
         for c in self.contours:
             if not (u > cv2.minEnclosingCircle(c) > l):
                 self.contours.remove(c)
     def extent(self, l, u):
+        possible_fit = []
         for c in self.contours:
             _, _, w, h = cv2.boundingRect(c)
             rect_area = w*h
-            if u < cv2.contourArea(c)/rect_area or cv2.contourArea(c)/rect_area < l:
-                self.contours.remove(c)
+            if u > cv2.contourArea(c)/rect_area > l:
+                possible_fit.append(c)
+        self.contours = possible_fit
     def hull(self, l, u):
         # Adds a list of hulls, which can be drawn like contours
         for c in self.contours:
