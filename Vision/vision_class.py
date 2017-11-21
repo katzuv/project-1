@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 from networktables import NetworkTable
-
 class Vision:
     def __init__(self):
         # Initialize camera and first frame reading
@@ -53,7 +52,11 @@ class Vision:
 
     def dirode(self):
         # Dialates and erodes the mask to reduce static and make the image clearer
-        kernel = np.zeros((5, 5), dtype = np.uint8)
+        kernel = np.array([
+            [0, 1, 0],
+            [1, 1, 1],
+            [0, 1, 0]
+        ])
         cv2.dilate(self.mask, kernel, iterations = self.get_item("DiRode iterations", 3))
         cv2.erode(self.mask, kernel, iterations = self.get_item("DiRode iterations", 3))
 
@@ -103,3 +106,13 @@ class Vision:
 
         self.get_contours()
         self.draw_contours()
+
+        cv2.imshow("Frame", self.frame)
+        cv2.imshow("Mask", self.mask)
+vision = Vision()
+vision.__init__()
+while True:
+    vision.__main__()
+    key = cv2.waitKey(1)
+    if key == ord("q"):
+        break
