@@ -3,7 +3,17 @@ import numpy as np
 from networktables import NetworkTable
 class Vision:
     def __init__(self):
-        # Initialize camera and first frame reading
+        """
+        Summary: Start camera, read and analyze first frame.
+        Parameters:
+            * cam : The camera the code will use. Set to 0 if there's only one connected, check ports if more than one.
+            Usually, a USB attached camera will have a bigger port than native ones.
+            * frame : A numpy array. The frame the camera captured. All contours and hulls will be drawn on it.
+            * hsv : The conversion of the values in frame from BGR to HSV, since our code operates on it.
+            * mask : The pixels found within a preset range.
+            * contours : A numpy array, converted to a list for easy of use. Stores the x and y values of all the contours.
+            * hulls : A list of hulls, empty until the hull() function is called.
+        """
         self.cam = cv2.VideoCapture(1)
         _, self.frame = self.cam.read()
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
@@ -12,7 +22,11 @@ class Vision:
         _, contours, _ = cv2.findContours(self.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         self.contours=list(contours)
         self.hulls = []
-        # Initialize SmartDashboard
+        """
+        Summary: Get SmartDashboard. 
+        # Currently unavailable. Instead, create and read a file where all values are stored.
+        # BTW, why is this one a different color?
+        """
         NetworkTable.initialize(server="roborio-{}-frc.local".format(5987))
         self.table = NetworkTable.getTable('SmartDashboard')
         # NetworkTable.initialize(server='192.168.13.75')
@@ -25,9 +39,15 @@ class Vision:
         self.set_item("Draw hulls", self.draw_hulls_b)
         self.set_item("DiRode iterations", self.dirode_iterations_i)
 
-
     def set_item(self, key, value):
-        # Add a value to SmartDashboard
+        """
+        Summary: Add a value to SmartDashboard.
+
+        Parameters:
+            * key : The name the value will be stored under and displayed.
+            * value : The information the key will hold.
+            * value_type : The type of the value it recieved (string, integer, boolean, etc.).
+        """
         value_type = type(value)
         if value_type is str:
             self.table.putString(key, value)
@@ -37,7 +57,13 @@ class Vision:
             self.table.putBoolean(key, value)
 
     def get_item(self, key, default_value):
-        # Get a value from SmartDashboard
+        """
+        Summary: Get a value from SmartDashboard.
+
+        Parameters:
+            * key : The name the value is stored under.
+            * default_value : The value returned if key holds none.
+        """
         try:
             res = self.table.getString(key, default_value)
         except:
