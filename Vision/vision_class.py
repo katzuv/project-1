@@ -13,6 +13,9 @@ class Vision:
             * mask : The pixels found within a preset range.
             * contours : A numpy array, converted to a list for easy of use. Stores the x and y values of all the contours.
             * hulls : A list of hulls, empty until the hull() function is called.
+            * centers_x : A list of the x values of all centers, empty until the find_center() function is called.
+            * centers_y : A list of the y values of all centers, empty until the find_center() function is called.
+            * center : The average point of all centers of all contours.
         """
         self.cam = cv2.VideoCapture(1)
         _, self.frame = self.cam.read()
@@ -22,6 +25,9 @@ class Vision:
         _, contours, _ = cv2.findContours(self.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         self.contours=list(contours)
         self.hulls = []
+        self.centers_x = []
+        self.centers_y = []
+        self.center = (0, 0)
         """
         Summary: Get SmartDashboard. 
         # Currently unavailable. Instead, create and read a file where all values are stored.
@@ -38,6 +44,7 @@ class Vision:
         self.set_item("Draw contours", self.draw_contours_b)
         self.set_item("Draw hulls", self.draw_hulls_b)
         self.set_item("DiRode iterations", self.dirode_iterations_i)
+        self.set_item("Find center", self.find_center_b)
 
     def set_item(self, key, value):
         """
@@ -146,6 +153,17 @@ class Vision:
                 self.hulls.append(cv2.convexHull(c, returnPoints=False))
         self.contour = possible_fit
 
+    def find_center(self):
+        # Finds the average of all centers of all contours
+        if self.get_item("Find center", self.find_center_b) and len(self.contours) > 0:
+            for c in self.contours:
+                (x, y), _ = cv2.minEnclosingCircle(c)
+                self.centers_x.append(x)
+                self.centers_y.append(y)
+            self.center = (int((sum(self.centers_x) / len(self.centers_x))), (int(sum(self.centers_y) / len(self.centers_y))))
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(self.frame, "o {}".format(self.center), self.center, font, 0.5, 255)
+
     def get_contours(self):
         # Executes a command line from SmartDashboard
         command = self.get_item("Command", self.command_s)
@@ -164,6 +182,7 @@ while True:
     vision.contours=list(contours)
     vision.get_contours()
     vision.draw_contours()
+    vision.find_center()
     cv2.imshow("Frame", vision.frame)
     cv2.imshow("Mask", vision.mask)
     key = cv2.waitKey(1)
