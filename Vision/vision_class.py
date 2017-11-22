@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from networktables import NetworkTable
 class Vision:
-    def __init__(self):
+    def __init__(self,calibration=False):
         """
         Summary: Start camera, read and analyze first frame.
         Parameters:
@@ -17,7 +17,7 @@ class Vision:
             * centers_y : A list of the y values of all centers, empty until the find_center() function is called.
             * center : The average point of all centers of all contours.
         """
-        self.cam = cv2.VideoCapture(2)
+        self.cam = cv2.VideoCapture(0)
         _, self.frame = self.cam.read()
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
         self.set_range()
@@ -29,6 +29,15 @@ class Vision:
         self.centers_y = []
         self.center = (0, 0)
         self.font = cv2.FONT_HERSHEY_SIMPLEX
+        self.calibration=calibration
+        if not self.calibration:
+            file=open('function.val','r')
+            self.get_distance=lambda x:eval(file.read())#if we are not in calibration mode take the function from the file
+            file.close()
+        else:
+            self.input=0#initiating the input variable
+            self.dist_cal=[]#creates an empty list of
+            self.area_cal=[]#both distance and area
         """
         Summary: Get SmartDashboard. 
         # Currently unavailable. Instead, create and read a file where all values are stored.
@@ -121,6 +130,7 @@ class Vision:
                 if u > cv2.contourArea(c) > l:
                     possible_fit.append(c)
             self.contours=possible_fit
+
     def bounding_rect(self, l, u):
         possible_fit = []
         if len(self.contours) > 0:
@@ -128,6 +138,7 @@ class Vision:
                 if u > cv2.boundingRect(c) > l:
                     possible_fit.append(c)
             self.contours=possible_fit
+
     def bounding_circ(self, l, u):
         possible_fit = []
         if len(self.contours) > 0:
@@ -135,6 +146,7 @@ class Vision:
                 if u > cv2.minEnclosingCircle(c) > l:
                     possible_fit.append(c)
             self.contours=possible_fit
+
     def extent(self, l, u):
         possible_fit = []
         for c in self.contours:
@@ -143,6 +155,7 @@ class Vision:
             if u > cv2.contourArea(c)/rect_area > l:
                 possible_fit.append(c)
         self.contours = possible_fit
+
     def hull(self, l, u):
         # Adds a list of hulls, which can be drawn like contours
         self.hulls.clear()
@@ -179,7 +192,43 @@ class Vision:
         self.angle = self.center[0]*45 / 320 -45
         cv2.putText(self.frame, "Angle: {}".format(self.angle), (5, 15), self.font, 0.5, 255)
 
-vision = Vision()
+    def numbers_input(self,key):
+        """
+        uses the numpad as a way of writing distance
+        :param key: gets keyboard key from the process
+        :return:
+        """
+        if key in range(48,58):#48-58 are the possible numbers
+            self.input *= 10
+            self.input += key-48
+        if key is 13: #13 is Enter
+            self.dist_cal.append(self.input)
+            self.total_area=0
+            for c in self.contours:
+                self.total_area+=cv2.contourArea(c)
+            self.area_cal.append(self.total_area)
+            self.input=0
+        if key is 8: #8 is backspace
+            if self.input is 0:
+                self.dist_cal.pop(len(self.dist_cal)-1)#if the number is 0 remove the last dist inserted
+            self.input/=10
+            self.input=int(self.input)
+
+    def create_poly(self,deg):
+        """
+        this function creates a function of degree deg
+        :param deg: the degree of the funtion
+        :return: writes to a file the wanted function
+        """
+        polyfit=np.polyfit(self.area_cal,self.dist_cal,deg=deg)
+        string='0'
+        for i in polyfit:
+            string += '+'+str(i)+'*x**'+str((deg-polyfit.index(i)))
+        file=open('function.val','w')
+        file.write(string)
+        file.close()
+
+vision = Vision(True)
 while True:
     # Repeatedly reads the next frame, turns it into an HSV mask, and finds contours
     _, vision.frame = vision.cam.read()
@@ -194,5 +243,14 @@ while True:
     cv2.imshow("Frame", vision.frame)
     cv2.imshow("Mask", vision.mask)
     key = cv2.waitKey(1)
+    if vision.calibration is True:
+        vision.numbers_input(key)
+    if key is ord('p') and vision.calibration:
+        vision.create_poly(5)#5 is the function's deg
+    if not vision.calibration:
+        vision.total_area=0
+        for c in vision.contours:
+            vision.total_area+=cv2.contourArea(c)
+        vision.distance=vision.get_distance(vision.total_area)
     if key == ord("q"):
         break
