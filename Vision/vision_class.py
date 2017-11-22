@@ -17,7 +17,7 @@ class Vision:
             * centers_y : A list of the y values of all centers, empty until the find_center() function is called.
             * center : The average point of all centers of all contours.
         """
-        self.cam = cv2.VideoCapture(1)
+        self.cam = cv2.VideoCapture(2)
         _, self.frame = self.cam.read()
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
         self.set_range()
@@ -28,6 +28,7 @@ class Vision:
         self.centers_x = []
         self.centers_y = []
         self.center = (0, 0)
+        self.font = cv2.FONT_HERSHEY_SIMPLEX
         """
         Summary: Get SmartDashboard. 
         # Currently unavailable. Instead, create and read a file where all values are stored.
@@ -155,14 +156,15 @@ class Vision:
 
     def find_center(self):
         # Finds the average of all centers of all contours
+        self.centers_x.clear()
+        self.centers_y.clear()
         if self.get_item("Find center", self.find_center_b) and len(self.contours) > 0:
             for c in self.contours:
                 (x, y), _ = cv2.minEnclosingCircle(c)
                 self.centers_x.append(x)
                 self.centers_y.append(y)
             self.center = (int((sum(self.centers_x) / len(self.centers_x))), (int(sum(self.centers_y) / len(self.centers_y))))
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            cv2.putText(self.frame, "o {}".format(self.center), self.center, font, 0.5, 255)
+            cv2.putText(self.frame, "o {}".format(self.center), self.center, self.font, 0.5, 255)
 
     def get_contours(self):
         # Executes a command line from SmartDashboard
@@ -170,7 +172,12 @@ class Vision:
         functions = command.split(";")
         if len(functions) > 0:
             for fun in functions:
-                exec("self."+fun)
+                if not fun == "":
+                    exec("self."+fun)
+
+    def get_angle(self):
+        self.angle = self.center[0]*45 / 320 -45
+        cv2.putText(self.frame, "Angle: {}".format(self.angle), (5, 15), self.font, 0.5, 255)
 
 vision = Vision()
 while True:
@@ -183,6 +190,7 @@ while True:
     vision.get_contours()
     vision.draw_contours()
     vision.find_center()
+    vision.get_angle()
     cv2.imshow("Frame", vision.frame)
     cv2.imshow("Mask", vision.mask)
     key = cv2.waitKey(1)

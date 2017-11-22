@@ -1,5 +1,5 @@
 import cv2
-cam = cv2.VideoCapture(1)
+cam = cv2.VideoCapture(2)
 minH=255
 minS=255
 minV=255
