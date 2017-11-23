@@ -241,17 +241,23 @@ while True:
     vision.draw_contours()
     vision.find_center()
     vision.get_angle()
-    cv2.imshow("Frame", vision.frame)
-    cv2.imshow("Mask", vision.mask)
     key = cv2.waitKey(1)
     if vision.calibration is True:
         vision.numbers_input(key)
-    if key is ord('p') and vision.calibration:
-        vision.create_poly(5)#5 is the function's deg
-    if not vision.calibration:
+        cv2.putText(vision.frame,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+        cv2.putText(vision.frame,"area: "+str(vision.area_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+        cv2.putText(vision.frame,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+        if key is ord('p') and vision.calibration:
+            vision.create_poly(5)#5 is the function's deg
+
+    else:
         vision.total_area=0
         for c in vision.contours:
             vision.total_area+=cv2.contourArea(c)
         vision.distance=vision.get_distance(vision.total_area)
+
+    cv2.imshow("Frame", vision.frame)
+    cv2.imshow("Mask", vision.mask)
+
     if key == ord("q"):
         break
