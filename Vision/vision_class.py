@@ -211,6 +211,7 @@ class Vision:
         if key is 8: #8 is backspace
             if self.input is 0:
                 self.dist_cal.pop(len(self.dist_cal)-1)#if the number is 0 remove the last dist inserted
+                self.area_cal.pop(len(self.area_cal)-1)#if the number is 0 remove the last area inserted
             self.input/=10
             self.input=int(self.input)
 
