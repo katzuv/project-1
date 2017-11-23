@@ -36,7 +36,7 @@ class Vision:
         self.font = cv2.FONT_HERSHEY_SIMPLEX
         self.calibration=calibration
         if not self.calibration:
-            file=open('function.val','r')
+            file=open('function_fake.val','r')
             funnction=file.read()
             self.get_distance=lambda x:eval(funnction)#if we are not in calibration mode take the function from the file
             file.close()
@@ -53,7 +53,7 @@ class Vision:
         self.table = NetworkTable.getTable('SmartDashboard')
         # NetworkTable.initialize(server='192.168.13.75')
         # self.table = NetworkTable.getTable("ACoolTable")
-        file = open('Values.val','r')
+        file = open('Values_fake.val','r')
         exec(file.read())
         file.close()
         self.set_item("Command", self.command_s)
@@ -228,7 +228,7 @@ class Vision:
         string='0'
         for i in polyfit:
             string += '+'+str(i)+'*x**'+str((deg-polyfit.index(i)))
-        file=open('function.val','w')
+        file=open('function_fake.val','w')
         file.write(string)
         file.close()
 key=-1
@@ -255,7 +255,7 @@ while True:
         cv2.putText(vision.frame2,"area: "+str(vision.area_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
         cv2.putText(vision.frame2,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
         if key is ord('p') and vision.calibration:
-            vision.create_poly(5)#5 is the function's deg
+            vision.create_poly(3)#5 is the function's deg
 
     else:
         vision.total_area=0
