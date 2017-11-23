@@ -17,8 +17,13 @@ class Vision:
             * centers_y : A list of the y values of all centers, empty until the find_center() function is called.
             * center : The average point of all centers of all contours.
         """
-        self.cam = cv2.VideoCapture(0)
-        _, self.frame = self.cam.read()
+        self.kernel = np.array([
+            [1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1]
+        ])
+        self.frame = np.load('map_vision.npy')
+        self.frame2=self.frame.copy()
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
         self.set_range()
         self.mask = cv2.inRange(self.hsv, self.lower_range, self.upper_range)
@@ -32,8 +37,8 @@ class Vision:
         self.calibration=calibration
         if not self.calibration:
             file=open('function.val','r')
-            func=file.read()
-            self.get_distance=lambda x:eval(func)#if we are not in calibration mode take the function from the file
+            funnction=file.read()
+            self.get_distance=lambda x:eval(funnction)#if we are not in calibration mode take the function from the file
             file.close()
         else:
             self.input=0#initiating the input variable
@@ -93,35 +98,31 @@ class Vision:
 
     def set_range(self):
         # Retrieves the range written in "Ace" which was written there by Range Finder 3.0
-        file = open("Ace.acpf", 'r')
-        exec(file.read())
-        file.close()
-
+        #file = open("Ace.acpf", 'r')
+        #exec(file.read())
+        #file.close()
+        self.lower_range=(0,255,0)
+        self.upper_range=(0,255,0)
     def draw_contours(self):
         # Draws contours on the frame, if asked so on SmartDashboard
         if len(self.contours) > 0 and self.get_item("Draw contours", self.draw_contours_b):
             for x in range(0, len(self.contours)):
-                cv2.drawContours(self.frame, self.contours[x], -1, (255, 0, 0), 3)
+                cv2.drawContours(self.frame2, self.contours[x], -1, (255, 0, 0), 3)
                 # Draws hulls on the frame, if asked so on SmartDashboard
-                if len(self.hulls) > 0 and self.get_item("Draw hulls", self.draw_hulls_b):
-                    defects = cv2.convexityDefects(self.contours[x], self.hulls[x])
-                    for i in range(defects.shape[0]):
-                        s, e, f, d = defects[i, 0]
-                        start = tuple(self.contours[x][s][0])
-                        end = tuple(self.contours[x][e][0])
-                        far = tuple(self.contours[x][f][0])
-                        cv2.line(self.frame, start, end, [0, 255, 0], 2)
-                        cv2.circle(self.frame, far, 5, [0, 0, 255], -1)
+                #if len(self.hulls) > 0 and self.get_item("Draw hulls", self.draw_hulls_b):
+                    #defects = cv2.convexityDefects(self.contours[x], self.hulls[x])
+                    #for i in range(defects.shape[0]):
+                    #    s, e, f, d = defects[i, 0]
+                    #    start = tuple(self.contours[x][s][0])
+                    #    end = tuple(self.contours[x][e][0])
+                    #    far = tuple(self.contours[x][f][0])
+                    #    cv2.line(self.frame2, start, end, [0, 255, 0], 2)
+                    #    cv2.circle(self.frame2, far, 5, [0, 0, 255], -1)
 
     def dirode(self):
         # Dialates and erodes the mask to reduce static and make the image clearer
-        kernel = np.array([
-            [0, 1, 0],
-            [1, 1, 1],
-            [0, 1, 0]
-        ])
-        cv2.dilate(self.mask, kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
-        cv2.erode(self.mask, kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
+        cv2.dilate(self.mask, self.kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
+        cv2.erode(self.mask, self.kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
 
     # All functions below filter contours based on a trait and a range set in SmartDashboard
     def area(self, l, u):
@@ -178,7 +179,7 @@ class Vision:
                 self.centers_x.append(x)
                 self.centers_y.append(y)
             self.center = (int((sum(self.centers_x) / len(self.centers_x))), (int(sum(self.centers_y) / len(self.centers_y))))
-            cv2.putText(self.frame, "o {}".format(self.center), self.center, self.font, 0.5, 255)
+            cv2.putText(self.frame2, "o {}".format(self.center), self.center, self.font, 0.5, 255)
 
     def get_contours(self):
         # Executes a command line from SmartDashboard
@@ -191,7 +192,7 @@ class Vision:
 
     def get_angle(self):
         self.angle = self.center[0]*45 / 320 -45
-        cv2.putText(self.frame, "Angle: {}".format(self.angle), (5, 15), self.font, 0.5, 255)
+        cv2.putText(self.frame2, "Angle: {}".format(self.angle), (5, 15), self.font, 0.5, 255)
 
     def numbers_input(self,key):
         """
@@ -223,31 +224,36 @@ class Vision:
         :return: writes to a file the wanted function
         """
         polyfit=np.polyfit(self.area_cal,self.dist_cal,deg=deg)
+        polyfit=list(polyfit)
         string='0'
         for i in polyfit:
             string += '+'+str(i)+'*x**'+str((deg-polyfit.index(i)))
         file=open('function.val','w')
         file.write(string)
         file.close()
-
-vision = Vision(True)
+key=-1
+vision = Vision()
 while True:
     # Repeatedly reads the next frame, turns it into an HSV mask, and finds contours
-    _, vision.frame = vision.cam.read()
+    if key == 2490368:
+        vision.frame=cv2.erode(vision.frame,vision.kernel)
+    elif key == 2621440:
+        vision.frame=cv2.dilate(vision.frame,vision.kernel)
+    vision.frame2=vision.frame.copy()
     vision.hsv = cv2.cvtColor(vision.frame, cv2.COLOR_BGR2HSV)
-    vision.mask = cv2.inRange(vision.hsv, vision.lower_range, vision.upper_range)
+    vision.mask = cv2.inRange(vision.frame, vision.lower_range, vision.upper_range)
     _, contours, _ = cv2.findContours(vision.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     vision.contours=list(contours)
     vision.get_contours()
     vision.draw_contours()
     vision.find_center()
     vision.get_angle()
-    key = cv2.waitKey(1)
+    key = cv2.waitKeyEx(1)
     if vision.calibration is True:
         vision.numbers_input(key)
-        cv2.putText(vision.frame,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-        cv2.putText(vision.frame,"area: "+str(vision.area_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-        cv2.putText(vision.frame,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+        cv2.putText(vision.frame2,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+        cv2.putText(vision.frame2,"area: "+str(vision.area_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+        cv2.putText(vision.frame2,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
         if key is ord('p') and vision.calibration:
             vision.create_poly(5)#5 is the function's deg
 
@@ -256,8 +262,9 @@ while True:
         for c in vision.contours:
             vision.total_area+=cv2.contourArea(c)
         vision.distance=vision.get_distance(vision.total_area)
+        cv2.putText(vision.frame2,"distance: "+str(vision.distance),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
 
-    cv2.imshow("Frame", vision.frame)
+    cv2.imshow("Frame", vision.frame2)
     cv2.imshow("Mask", vision.mask)
 
     if key == ord("q"):
