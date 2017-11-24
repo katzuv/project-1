@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from networktables import NetworkTable
+from networktables import NetworkTables
 class Vision:
     def __init__(self,calibration=False):
         """
@@ -44,19 +44,20 @@ class Vision:
         # Currently unavailable. Instead, create and read a file where all values are stored.
         # BTW, why is this one a different color?
         """
-        NetworkTable.initialize(server="roborio-{}-frc.local".format(5987))
-        self.table = NetworkTable.getTable('SmartDashboard')
-        # NetworkTable.initialize(server='192.168.13.75')
+        #NetworkTables.initialize(server="roborio-5987-frc.local")
+        NetworkTables.setServerMode()
+        NetworkTables.initialize(server="192.168.1.16")
+        self.table = NetworkTables.getTable("SmartDashboard")
         # self.table = NetworkTable.getTable("ACoolTable")
         file = open('Values.val','r')
-        exec(file.read())
+        execution=file.read()
+        exec(execution)
         file.close()
         self.set_item("Command", self.command_s)
         self.set_item("Draw contours", self.draw_contours_b)
         self.set_item("Draw hulls", self.draw_hulls_b)
         self.set_item("DiRode iterations", self.dirode_iterations_i)
         self.set_item("Find center", self.find_center_b)
-
     def set_item(self, key, value):
         """
         Summary: Add a value to SmartDashboard.
@@ -190,7 +191,7 @@ class Vision:
                     exec("self."+fun)
 
     def get_angle(self):
-        self.angle = self.center[0]*45 / 320 -45
+        self.angle = self.center[0]*30 / 320 -30
         cv2.putText(self.frame, "Angle: {}".format(self.angle), (5, 15), self.font, 0.5, 255)
 
     def numbers_input(self,key):
