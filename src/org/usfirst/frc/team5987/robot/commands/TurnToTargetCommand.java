@@ -1,6 +1,7 @@
 package org.usfirst.frc.team5987.robot.commands;
 
 import org.usfirst.frc.team5987.robot.Robot;
+import auxiliary.MiniPID;
 import org.usfirst.frc.team5987.robot.RobotMap;
 import org.usfirst.frc.team5987.robot.subsystems.DrivingSubsystem;
 
@@ -13,18 +14,19 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class TurnToTargetCommand extends Command {
 	DrivingSubsystem driveSubsystem;
+	MiniPID pid;
 	Timer timer = new Timer();
 	double lastTime;
 	
 	// these values you get from the raspberry pi.
-	double prevCameraTargetAngle = 0;
+	//double prevCameraTargetAngle = 0;
 	double cameraTargetAngle = 0;
 	double cameraTargetDistance = 0;
 
 	// These are determined at the start of the command
-	double ConstantP;
-	double ConstantI;
-	double ConstantD;
+	double ConstantP=0.05;
+	double ConstantI=0;
+	double ConstantD=0;
 	
 	double DELAY = 0.005;
 
@@ -34,8 +36,6 @@ public class TurnToTargetCommand extends Command {
 	//error: the angle the robot needs to turn
 	double error, prevError;
 	//pid changing values
-	double P, I, D;
-	double Si = 0;
 
 	public TurnToTargetCommand() {
 		driveSubsystem = Robot.driveSubsystem;
@@ -53,8 +53,9 @@ public class TurnToTargetCommand extends Command {
 		ConstantI = SmartDashboard.getNumber("Pid: i - ", RobotMap.ConstantI);
 		ConstantD = SmartDashboard.getNumber("Pid: d - ", RobotMap.ConstantD);
 		
+		pid = new MiniPID(ConstantP,ConstantI,ConstantD);
 		//getting the CAMERA VALUES from the raspberry pi
-		prevCameraTargetAngle = SmartDashboard.getNumber("Target Angle: ", 30);
+		//prevCameraTargetAngle = SmartDashboard.getNumber("Target Angle: ", 30);
 		cameraTargetAngle = SmartDashboard.getNumber("Target Angle: ", 30);
 		cameraTargetDistance = SmartDashboard.getNumber("Target Distance: ", 50);
 		
@@ -78,16 +79,12 @@ public class TurnToTargetCommand extends Command {
 		error = robotTargetAngle - Robot.driveSubsystem.getAngle();
 		SmartDashboard.putNumber("Error", error);
 		SmartDashboard.putNumber("Angle", Robot.driveSubsystem.getAngle());
-		P = ConstantP * error;
-		Si += timeDiff * (prevError + error) / 2;
-		I = ConstantI * Si;
-		D = ConstantD * (error - prevError) / timeDiff;
-
-		SmartDashboard.putNumber("Val motors", (P + I + D));
-		Robot.driveSubsystem.drive(P + I + D, -(P + I + D));
+		double output = pid.getOutput(error,robotTargetAngle);
+		SmartDashboard.putNumber("Val motors", output);
+		Robot.driveSubsystem.drive(output, -output);
 		prevError = error;
 		Timer.delay(DELAY);
-		prevCameraTargetAngle = cameraTargetAngle;
+		//prevCameraTargetAngle = cameraTargetAngle;
 	}
 
 	// Make this return true when this Command no longer needs to run execute()
