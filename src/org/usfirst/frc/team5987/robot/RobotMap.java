@@ -25,8 +25,8 @@ public class RobotMap {
 	public static double ConstantI = 0;
 	public static double ConstantD = 0;
 
-    public static int solenoidForward = 0;
-    public static int solenoidReverse = 1;
+    public static int solenoidForward = 5;
+    public static int solenoidReverse = 4;
     public static int compressor = 6;
     
     public static double distanceFromCenter = 30;
