@@ -67,11 +67,11 @@ public class TurnToTargetCommand extends Command {
 	// Called repeatedly when this Command is scheduled to run
 	protected void execute() {
 		//Check if the camera Values changed, and fix the target.
-		cameraTargetAngle = SmartDashboard.getNumber("Target Angle: ", 30);
+		/*cameraTargetAngle = SmartDashboard.getNumber("Target Angle: ", 30);
 		if(cameraTargetAngle != prevCameraTargetAngle){
 			robotTargetAngle = cameraToCenterAngle(cameraTargetAngle, cameraTargetDistance)
 					+ Robot.driveSubsystem.getAngle();
-		}
+		}*/
 		double timeDiff = timer.get() - lastTime;
 		lastTime = timer.get();
 		
@@ -92,7 +92,7 @@ public class TurnToTargetCommand extends Command {
 
 	// Make this return true when this Command no longer needs to run execute()
 	protected boolean isFinished() {
-		return Math.abs(error) < 1.4;
+		return Math.abs(error) < 1.0;
 	}
 
 	// Called once after isFinished returns true
