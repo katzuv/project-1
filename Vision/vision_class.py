@@ -1,6 +1,10 @@
 import cv2
 import numpy as np
 from networktables import NetworkTables
+from flask import Flask, render_template, Response
+
+is_stream=True
+
 class Vision:
     def __init__(self, calibration=False):
         """
@@ -17,7 +21,7 @@ class Vision:
             * centers_y : A list of the y values of all centers, empty until the find_center() function is called.
             * center : The average point of all centers of all contours.
         """
-        self.cam = cv2.VideoCapture(2)
+        self.cam = cv2.VideoCapture(0)
         _, self.frame = self.cam.read()
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
         self.set_range()
@@ -30,7 +34,7 @@ class Vision:
         self.center = (0, 0)
         self.font = cv2.FONT_HERSHEY_SIMPLEX
         self.calibration=calibration
-
+        self.stream=[]
         self.cal_fun = {"area": ("cv2.contourArea(c)",False), "height": ("cv2.boundingRect(c)[3]",True)}
 
         if not self.calibration:
@@ -48,8 +52,11 @@ class Vision:
         # BTW, why is this one a different color?
         """
         #NetworkTables.initialize(server="roborio-5987-frc.local")
-        NetworkTables.setServerMode()
-        NetworkTables.initialize(server="192.168.1.16")
+        try:
+            NetworkTables.setServerMode()
+            NetworkTables.initialize(server="192.168.1.16")
+        except:
+            pass
         self.table = NetworkTables.getTable("SmartDashboard")
         # self.table = NetworkTable.getTable("ACoolTable")
         file = open('Values.val','r')
@@ -241,32 +248,70 @@ class Vision:
         file.write(string)
         file.close()
 
-vision = Vision()
-while True:
-    # Repeatedly reads the next frame, turns it into an HSV mask, and finds contours
-    _, vision.frame = vision.cam.read()
-    vision.hsv = cv2.cvtColor(vision.frame, cv2.COLOR_BGR2HSV)
-    vision.mask = cv2.inRange(vision.hsv, vision.lower_range, vision.upper_range)
-    _, contours, _ = cv2.findContours(vision.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    vision.contours=list(contours)
-    vision.get_contours()
-    vision.draw_contours()
-    vision.find_center()
-    vision.get_angle()
-    key = cv2.waitKey(1)
-    if vision.calibration:
-        vision.numbers_input(key)
-        cv2.putText(vision.frame,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-        cv2.putText(vision.frame,vision.find_by_s+": "+str(vision.contour_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-        cv2.putText(vision.frame,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-        if key is ord('p') and vision.calibration:
-            vision.create_poly(5) #5 is the function's deg
-    else:
-        vision.distance=vision.get_distance(vision.measure())
-        cv2.putText(vision.frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
+stream = Flask(__name__)
+@stream.route('/')
+def index():
+    return render_template('index.html')
+def gen(vision):
+    print('here')
+    while True:
+        # Repeatedly reads the next frame, turns it into an HSV mask, and finds contours
+        _, vision.frame = vision.cam.read()
+        vision.hsv = cv2.cvtColor(vision.frame, cv2.COLOR_BGR2HSV)
+        vision.mask = cv2.inRange(vision.hsv, vision.lower_range, vision.upper_range)
+        _, contours, _ = cv2.findContours(vision.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        vision.contours=list(contours)
+        vision.get_contours()
+        vision.draw_contours()
+        vision.find_center()
+        vision.get_angle()
+        key = cv2.waitKey(1)
+        if vision.calibration:
+            vision.numbers_input(key)
+            cv2.putText(vision.frame,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+            cv2.putText(vision.frame,vision.find_by_s+": "+str(vision.contour_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+            cv2.putText(vision.frame,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+            if key is ord('p') and vision.calibration:
+                vision.create_poly(5) #5 is the function's deg
+        else:
+            vision.distance=vision.get_distance(vision.measure())
+            cv2.putText(vision.frame, "distance: " + str(vision.distance), (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
+        #cv2.imshow('frame',vision.frame)
+        jpg=cv2.imencode('.jpg',vision.frame.copy())[1].tostring()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + jpg + b'\r\n')
 
-    cv2.imshow("Frame", vision.frame)
-    cv2.imshow("Mask", vision.mask)
-
-    if key == ord("q"):
-        break
+@stream.route('/video_feed')
+def video_feed():
+    return Response(gen(Vision()),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+if is_stream:
+    stream.run(host='localhost',debug=True)
+else:
+    vision=Vision()
+    while True:
+        # Repeatedly reads the next frame, turns it into an HSV mask, and finds contours
+        _, vision.frame = vision.cam.read()
+        vision.hsv = cv2.cvtColor(vision.frame, cv2.COLOR_BGR2HSV)
+        vision.mask = cv2.inRange(vision.hsv, vision.lower_range, vision.upper_range)
+        _, contours, _ = cv2.findContours(vision.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        vision.contours=list(contours)
+        vision.get_contours()
+        vision.draw_contours()
+        vision.find_center()
+        vision.get_angle()
+        key = cv2.waitKey(1)
+        if vision.calibration:
+            vision.numbers_input(key)
+            cv2.putText(vision.frame,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+            cv2.putText(vision.frame,vision.find_by_s+": "+str(vision.contour_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+            cv2.putText(vision.frame,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+            if key is ord('p') and vision.calibration:
+                vision.create_poly(5) #5 is the function's deg
+        else:
+            vision.distance=vision.get_distance(vision.measure())
+            cv2.putText(vision.frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
+        cv2.imshow('frame',vision.frame)
+        if key is ord('q'):
+            cv2.destroyAllWindows()
+            break
