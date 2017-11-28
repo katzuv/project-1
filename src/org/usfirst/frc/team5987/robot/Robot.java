@@ -2,9 +2,13 @@
 package org.usfirst.frc.team5987.robot;
 
 import org.usfirst.frc.team5987.robot.commands.ExampleCommand;
+import org.usfirst.frc.team5987.robot.subsystems.DrivingSubsystem;
 import org.usfirst.frc.team5987.robot.subsystems.ExampleSubsystem;
 
+import com.kauailabs.navx.frc.AHRS;
+
 import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -20,8 +24,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Robot extends IterativeRobot {
 
 	public static final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
+	public static final DrivingSubsystem driveSubsystem = new DrivingSubsystem();
 	public static OI oi;
-
+	public static AHRS ahrs = new AHRS(SPI.Port.kMXP);
 	Command autonomousCommand;
 //	SendableChooser chooser;
 

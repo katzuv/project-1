@@ -16,7 +16,7 @@ public class RobotMap {
     public static int rightRearMotor = 3;
 	public static int leftDriveChanelA = 4;
 	public static int leftDriveChanelB = 5;
-	
+	public static final double distancePerPulse = 0.00133;
 	public static int rightDriveChanelA =6;
 	public static int rightDriveChanelB = 7;
     // If you are using multiple modules, make sure to define both the port
