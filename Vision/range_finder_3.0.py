@@ -1,5 +1,5 @@
 import cv2
-cam = cv2.VideoCapture(2)
+cam = cv2.VideoCapture(1)
 minH=255
 minS=255
 minV=255
@@ -8,7 +8,7 @@ maxS=0
 maxV=0
 while True:
     _, frame=cam.read()
-    cv2.imshow("frame",frame)
+    cv2.imshow("frame", frame)
     key= cv2.waitKey(1) & 0xFF
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     if key == ord('q'):

@@ -3,7 +3,7 @@ import numpy as np
 from networktables import NetworkTables
 from flask import Flask, render_template, Response
 
-is_stream=True
+is_stream=False
 
 class Vision:
     def __init__(self, calibration=False):
@@ -21,7 +21,7 @@ class Vision:
             * centers_y : A list of the y values of all centers, empty until the find_center() function is called.
             * center : The average point of all centers of all contours.
         """
-        self.cam = cv2.VideoCapture(0)
+        self.cam = cv2.VideoCapture(1)
         _, self.frame = self.cam.read()
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
         self.set_range()
@@ -35,7 +35,8 @@ class Vision:
         self.font = cv2.FONT_HERSHEY_SIMPLEX
         self.calibration=calibration
         self.stream=[]
-        self.cal_fun = {"area": ("cv2.contourArea(c)",False), "height": ("cv2.boundingRect(c)[3]",True)}
+        self.cal_fun = {'area': ("cv2.contourArea(c)", False), 'extent': ("cv2.contourArea(c) / (cv2.boundingRect(c)[2] * cv2.boundingRect(c)[3])", False),
+                        "height": ("cv2.boundingRect(c)[3]", True), 'hull': ("cv2.contourArea(c) / cv2.contourArea(cv2.convexHull(c))", False)}
 
         if not self.calibration:
             file=open('function.val','r')
@@ -58,7 +59,6 @@ class Vision:
         except:
             pass
         self.table = NetworkTables.getTable("SmartDashboard")
-        # self.table = NetworkTable.getTable("ACoolTable")
         file = open('Values.val','r')
         execution=file.read()
         exec(execution)
@@ -135,51 +135,6 @@ class Vision:
         cv2.dilate(self.mask, kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
         cv2.erode(self.mask, kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
 
-    # All functions below filter contours based on a trait and a range set in SmartDashboard
-    def area(self, l, u):
-        if len(self.contours) > 0:
-            possible_fit = []
-            for c in self.contours:
-                if u > cv2.contourArea(c) > l:
-                    possible_fit.append(c)
-            self.contours=possible_fit
-
-    def bounding_rect(self, l, u):
-        possible_fit = []
-        if len(self.contours) > 0:
-            for c in self.contours:
-                if u > cv2.boundingRect(c) > l:
-                    possible_fit.append(c)
-            self.contours=possible_fit
-
-    def bounding_circ(self, l, u):
-        possible_fit = []
-        if len(self.contours) > 0:
-            for c in self.contours:
-                if u > cv2.minEnclosingCircle(c) > l:
-                    possible_fit.append(c)
-            self.contours=possible_fit
-
-    def extent(self, l, u):
-        possible_fit = []
-        for c in self.contours:
-            _, _, w, h = cv2.boundingRect(c)
-            rect_area = w*h
-            if u > cv2.contourArea(c)/rect_area > l:
-                possible_fit.append(c)
-        self.contours = possible_fit
-
-    def hull(self, l, u):
-        # Adds a list of hulls, which can be drawn like contours
-        self.hulls.clear()
-        possible_fit = []
-        for c in self.contours:
-            if (u > cv2.contourArea(c) / cv2.contourArea(cv2.convexHull(c)) > l):
-                possible_fit.append(c)
-                # Adds a hull to the list only if it fits our parameters
-                self.hulls.append(cv2.convexHull(c, returnPoints=False))
-        self.contour = possible_fit
-
     def find_center(self):
         # Finds the average of all centers of all contours
         self.centers_x.clear()
@@ -196,10 +151,18 @@ class Vision:
         # Executes a command line from SmartDashboard
         command = self.get_item("Command", self.command_s)
         functions = command.split(";")
+        self.hulls.clear()
         if len(functions) > 0:
             for fun in functions:
-                if not fun == "":
-                    exec("self."+fun)
+                fun = fun.split(",")
+                if fun is not None and len(self.contours) > 0:
+                    possible_fit = []
+                    for c in self.contours:
+                        if float(fun[2]) > float(eval(self.cal_fun[fun[0]][0])) > float(fun[1]):
+                            possible_fit.append(c)
+                            if fun[0] == 'hull':
+                                self.hulls.append(cv2.convexHull(c, returnPoints=False))
+                    self.contours = possible_fit
 
     def get_angle(self):
         self.angle = self.center[0]*30 / 320 -30
