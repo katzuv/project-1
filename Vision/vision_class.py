@@ -2,13 +2,9 @@ import cv2
 import numpy as np
 from networktables import NetworkTables
 from flask import Flask, render_template, Response
-<<<<<<< HEAD
-
-is_stream=False
-=======
 from threading import _start_new_thread
-is_stream=True
->>>>>>> Crime-(Threading)
+is_stream=False
+is_calibration=True
 
 class Vision:
     def __init__(self, calibration=False):
@@ -26,8 +22,10 @@ class Vision:
             * centers_y : A list of the y values of all centers, empty until the find_center() function is called.
             * center : The average point of all centers of all contours.
         """
-        self.cam = cv2.VideoCapture(1)
+        self.cam = cv2.VideoCapture(0)
+        self.cam.set(cv2.CAP_PROP_AUTO_EXPOSURE,0)
         _, self.frame = self.cam.read()
+        self.show_frame=self.frame.copy()
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
         self.set_range()
         self.mask = cv2.inRange(self.hsv, self.lower_range, self.upper_range)
@@ -40,7 +38,7 @@ class Vision:
         self.font = cv2.FONT_HERSHEY_SIMPLEX
         self.calibration=calibration
         self.stream=[]
-        self.cal_fun = {'area': ("cv2.contourArea(c)", False), 'extent': ("cv2.contourArea(c) / (cv2.boundingRect(c)[2] * cv2.boundingRect(c)[3])", False),
+        self.cal_fun = {'area': ("cv2.contourArea(c)", False), 'extent': ("cv2.contourArea(c) / (cv2.minAreaRect(c)[1][0] * cv2.minAreaRect(c)[1][1])", False),
                         "height": ("cv2.boundingRect(c)[3]", True), 'hull': ("cv2.contourArea(c) / cv2.contourArea(cv2.convexHull(c))", False)}
 
         if not self.calibration:
@@ -68,6 +66,7 @@ class Vision:
         execution=file.read()
         exec(execution)
         file.close()
+        print(self.lower_range,self.upper_range)
         self.set_item("Command", self.command_s)
         self.set_item("Draw contours", self.draw_contours_b)
         self.set_item("Draw hulls", self.draw_hulls_b)
@@ -118,7 +117,7 @@ class Vision:
         # Draws contours on the frame, if asked so on SmartDashboard
         if len(self.contours) > 0 and self.get_item("Draw contours", self.draw_contours_b):
             for x in range(0, len(self.contours)):
-                cv2.drawContours(self.frame, self.contours[x], -1, (255, 0, 0), 3)
+                cv2.drawContours(self.show_frame, self.contours[x], -1, (255, 0, 0), 3)
                 # Draws hulls on the frame, if asked so on SmartDashboard
                 if len(self.hulls) > 0 and self.get_item("Draw hulls", self.draw_hulls_b):
                     defects = cv2.convexityDefects(self.contours[x], self.hulls[x])
@@ -127,8 +126,8 @@ class Vision:
                         start = tuple(self.contours[x][s][0])
                         end = tuple(self.contours[x][e][0])
                         far = tuple(self.contours[x][f][0])
-                        cv2.line(self.frame, start, end, [0, 255, 0], 2)
-                        cv2.circle(self.frame, far, 5, [0, 0, 255], -1)
+                        cv2.line(self.show_frame, start, end, [0, 255, 0], 2)
+                        cv2.circle(self.show_frame, far, 5, [0, 0, 255], -1)
 
     def dirode(self):
         # Dialates and erodes the mask to reduce static and make the image clearer
@@ -150,7 +149,7 @@ class Vision:
                 self.centers_x.append(x)
                 self.centers_y.append(y)
             self.center = (int((sum(self.centers_x) / len(self.centers_x))), (int(sum(self.centers_y) / len(self.centers_y))))
-            cv2.putText(self.frame, "o {}".format(self.center), self.center, self.font, 0.5, 255)
+            cv2.putText(self.show_frame, "o {}".format(self.center), self.center, self.font, 0.5, 255)
 
     def get_contours(self):
         # Executes a command line from SmartDashboard
@@ -171,7 +170,7 @@ class Vision:
 
     def get_angle(self):
         self.angle = self.center[0]*30 / 320 -30
-        cv2.putText(self.frame, "Angle: {}".format(self.angle), (5, 15), self.font, 0.5, 255)
+        cv2.putText(self.show_frame, "Angle: {}".format(self.angle), (5, 15), self.font, 0.5, 255)
 
     def measure(self):
         self.total_cal = 0
@@ -219,9 +218,9 @@ global vision
 global stop
 global app
 app = Flask(__name__)
-vision=Vision()
 stop=False
-
+vision=Vision(is_calibration)
+vision.key=-1
 @app.route('/')
 def index():
     global stop
@@ -232,7 +231,13 @@ def gen():
     global stop
     global vision
     while not stop:
-        jpg=cv2.imencode('.jpg',vision.frame.copy())[1].tostring()
+        if not vision.calibration:
+            cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
+        else:
+            cv2.putText(vision.show_frame,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+            cv2.putText(vision.show_frame,vision.find_by_s+": "+str(vision.contour_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+            cv2.putText(vision.show_frame,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+        jpg=cv2.imencode('.jpg',vision.show_frame)[1].tostring()
         yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + jpg + b'\r\n')
         key=cv2.waitKey(1)
 
@@ -248,10 +253,10 @@ def get_frame():
     global vision
     while not stop:
         _,vision.frame=vision.cam.read()
+        vision.show_frame=vision.frame.copy()
         vision.hsv = cv2.cvtColor(vision.frame, cv2.COLOR_BGR2HSV)
         vision.mask = cv2.inRange(vision.hsv, vision.lower_range, vision.upper_range)
         key=cv2.waitKey(1)
-
 def analyse():
     global stop
     global vision
@@ -264,14 +269,11 @@ def analyse():
         vision.get_angle()
         if vision.calibration:
             vision.numbers_input(vision.key)
-            cv2.putText(vision.frame,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-            cv2.putText(vision.frame,vision.find_by_s+": "+str(vision.contour_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-            cv2.putText(vision.frame,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
             if vision.key is ord('p') and vision.calibration:
                 vision.create_poly(5) #5 is the function's deg
         else:
             vision.distance=vision.get_distance(vision.measure())
-            cv2.putText(vision.frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
 
 def show(stream):
     global stop
@@ -281,13 +283,19 @@ def show(stream):
         app.run(host='localhost', debug=False)
     else:
         while not stop:
-            cv2.imshow('Frame',vision.frame)
+            cv2.imshow('Frame',vision.show_frame)
             if vision.calibration:
                 cv2.imshow('Masked',vision.mask)
+            if not vision.calibration:
+                cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
+            else:
+                cv2.putText(vision.show_frame,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+                cv2.putText(vision.show_frame,vision.find_by_s+": "+str(vision.contour_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+                cv2.putText(vision.show_frame,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
             vision.key=cv2.waitKey(1)
             if vision.key is ord('q'):
                 cv2.destroyAllWindows()
                 stop=True
 _start_new_thread(get_frame,())
 _start_new_thread(analyse,())
-show(True)
+show(is_stream)
