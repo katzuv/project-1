@@ -2,6 +2,7 @@ package org.usfirst.frc.team5987.robot.commands;
 
 import org.usfirst.frc.team5987.robot.Robot;
 import org.usfirst.frc.team5987.robot.RobotMap;
+import org.usfirst.frc.team5987.robot.subsystems.DrivingSubsystem;
 
 import auxiliary.MiniPID;
 import edu.wpi.first.wpilibj.Timer;
@@ -9,29 +10,35 @@ import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
+ *@author Dan Katzuv
  *
  */
 public class DriveToTargetCommand extends Command {
-
+	DrivingSubsystem driveSubsystem;
 	public DriveToTargetCommand() {
 		// Use requires() here to declare subsystem dependencies
 		// eg. requires(chassis);
 		requires(Robot.driveSubsystem);
+		driveSubsystem = Robot.driveSubsystem;
+		
 	}
 
 	MiniPID pid = new MiniPID(RobotMap.driveKp, RobotMap.driveKi, RobotMap.driveKd);
 	Timer time = new Timer();
+	Timer speed = new Timer();
 	double encoderDelta = 0;
 	boolean reachedTarget = false;
 	double initLeftEncoder, initRightEncoder, initDistanceFromTarget;
-
+	double gOutput;
 	/**
 	 * Initializes the encoders values and the distances from the target.
+	 * Gets the initial encoder values from the subsystem and gets the distance
+	 * from the smart dashboard in meters.
 	 */
 	private void init() {
 		initLeftEncoder = driveSubsystem.getLeftEncoder();
 		initRightEncoder = driveSubsystem.getRightEncoder();
-		initDistanceFromTarget = SmartDashboard.getNumber("distance", 1);
+		initDistanceFromTarget = SmartDashboard.getNumber("distance", 100);
 	}
 
 	// Called just before this Command runs the first time
@@ -53,26 +60,18 @@ public class DriveToTargetCommand extends Command {
 		 * The output from the PID controller.
 		 */
 		double output = pid.getOutput(initDistanceFromTarget - encoderDelta, 1);
-
-		if (initDistanceFromTarget != SmartDashboard.getNumber("distance", 1)) {
+		gOutput=output;
+		/*if (initDistanceFromTarget != SmartDashboard.getNumber("distance", 1)) {
 			init();
-		}
+		}*/
 		driveSubsystem.drive(output, output);
 		time.delay(0.05);
 	}
 
 	// Make this return true when this Command no longer needs to run execute()
 	protected boolean isFinished() {
-		if (Math.abs(SmartDashboard.getNumber("distance", 1) - 1) < 0.2) {
-			if (!reachedTarget) {
-				time.reset();
-				time.start();
-			}
-			reachedTarget = true;
-
-			if (time.get() > 2) {
-				return true;
-			}
+		if ((initDistanceFromTarget - encoderDelta - 1) < 0.2 && Math.abs(gOutput) < 0.1) {
+			return true;
 		}
 		return false;
 	}
