@@ -4,8 +4,9 @@ package org.usfirst.frc.team5987.robot;
 import org.usfirst.frc.team5987.robot.commands.ExampleCommand;
 import org.usfirst.frc.team5987.robot.subsystems.DrivingSubsystem;
 import org.usfirst.frc.team5987.robot.subsystems.ExampleSubsystem;
-import org.usfirst.frc.team5987.robot.subsystems.PneumaticsSubsystem;
+
 import com.kauailabs.navx.frc.AHRS;
+
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.command.Command;
@@ -23,13 +24,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * directory.
  */
 public class Robot extends IterativeRobot {
-	public static final DrivingSubsystem driveSubsystem = new DrivingSubsystem();
 	public static final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
-	public static final PneumaticsSubsystem pneumaticsSubsystem = new PneumaticsSubsystem();
+	public static final DrivingSubsystem driveSubsystem = new DrivingSubsystem();
 	public static OI oi;
 	public static AHRS ahrs;
-    Command autonomousCommand;
-    SendableChooser chooser;
 
     /**
      * This function is run when the robot is first started up and should be
@@ -38,16 +36,13 @@ public class Robot extends IterativeRobot {
     public void robotInit() {
     	ahrs  = new AHRS(SPI.Port.kMXP);
 		oi = new OI();
-        chooser = new SendableChooser();
-        chooser.addDefault("Default Auto", new ExampleCommand());
-//        chooser.addObject("My Auto", new MyAutoCommand());
-        SmartDashboard.putData("Auto mode", chooser);
         SmartDashboard.putNumber("kpRotation", RobotMap.ConstantP);
         SmartDashboard.putNumber("kiRotation", RobotMap.ConstantI);
         SmartDashboard.putNumber("kdRotation", RobotMap.ConstantD);
-        pneumaticsSubsystem.startCompressor();
     }
 	
+	Command autonomousCommand;
+
 
 	/**
 	 * This function is called once each time the robot enters Disabled mode.
@@ -55,7 +50,7 @@ public class Robot extends IterativeRobot {
 	 * the robot is disabled.
 	 */
 	public void disabledInit() {
-		pneumaticsSubsystem.stopCompressor();
+		
 	}
 
 	public void disabledPeriodic() {

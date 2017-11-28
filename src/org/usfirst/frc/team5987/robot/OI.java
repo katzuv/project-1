@@ -1,7 +1,6 @@
 package org.usfirst.frc.team5987.robot;
 
 
-import org.usfirst.frc.team5987.robot.commands.SolenoidCommand;
 import org.usfirst.frc.team5987.robot.commands.TurnToTargetCommand;
 
 import edu.wpi.first.wpilibj.Joystick;
@@ -50,8 +49,6 @@ public class OI {
 	// number it is.
 	// Joystick stick = new Joystick(port);
 	// Button button = new JoystickButton(stick, buttonNumber);
-	Button solenoid = new JoystickButton(leftStick, 1); // Solenoid reverse.
-	Button solenoid2 = new JoystickButton(leftStick, 2); // Solenoid forward.
 	// There are a few additional built in buttons you can use. Additionally,
 	// by subclassing Button you can create custom triggers and bind those to
 	// commands the same as any other Button.
@@ -72,8 +69,6 @@ public class OI {
 	// until it is finished as determined by it's isFinished method.
 	// button.whenReleased(new ExampleCommand());
 	public OI() {
-		solenoid.whenPressed(new SolenoidCommand(true));
-		solenoid2.whenPressed(new SolenoidCommand(false));
 		leftCenterBtn.whenPressed(new TurnToTargetCommand());
 	}
 }

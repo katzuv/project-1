@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 bin/
 tmp/
 *.tmp
@@ -52,3 +53,8 @@ local.properties
 *.class
 *.ctxt
 
+=======
+/bin/
+build/*
+dist/*
+>>>>>>> robot2

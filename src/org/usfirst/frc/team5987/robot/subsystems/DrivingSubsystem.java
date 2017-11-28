@@ -39,18 +39,18 @@ public class DrivingSubsystem extends Subsystem {
      * @param rightValue rightMotor speed -1 <= speed <= 1
      */
     public void drive(double leftValue, double rightValue){
-    	robotDrive.tankDrive(-leftValue, rightValue);
+    	robotDrive.tankDrive(-leftValue, -rightValue);
     	getLeftEncoder();
     	getRightEncoder();
     }
     public double getLeftEncoder() {
-    	double distance = leftEncoder.getDistance();
+    	double distance = -leftEncoder.getDistance();
     	SmartDashboard.putNumber("leftEncoder", distance);
     	return distance;
     }
     
     public double getRightEncoder() {
-    	double distance = -rightEncoder.getDistance();
+    	double distance = rightEncoder.getDistance();
     	SmartDashboard.putNumber("rightEncoder", distance);
     	return distance;
     }
