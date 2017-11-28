@@ -311,7 +311,7 @@ def show(stream):
     global vision
     global app
     if stream:
-        app.run(host='localhost', debug=True)
+        app.run(host='localhost', debug=False)
     else:
         while not stop:
             cv2.imshow('Frame',vision.frame)
