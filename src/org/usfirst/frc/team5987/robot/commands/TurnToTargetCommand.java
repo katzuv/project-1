@@ -49,15 +49,15 @@ public class TurnToTargetCommand extends Command {
 		timer.reset();
 		
 		//Getting the constants from smartdashboard.
-		ConstantP = SmartDashboard.getNumber("Pid: p - ", RobotMap.ConstantP);
-		ConstantI = SmartDashboard.getNumber("Pid: i - ", RobotMap.ConstantI);
-		ConstantD = SmartDashboard.getNumber("Pid: d - ", RobotMap.ConstantD);
+		ConstantP = SmartDashboard.getNumber("kpRotation", RobotMap.ConstantP);
+		ConstantI = SmartDashboard.getNumber("kiRotation", RobotMap.ConstantI);
+		ConstantD = SmartDashboard.getNumber("kdRotation", RobotMap.ConstantD);
 		
 		pid = new MiniPID(ConstantP,ConstantI,ConstantD);
 		//getting the CAMERA VALUES from the raspberry pi
 		//prevCameraTargetAngle = SmartDashboard.getNumber("Target Angle: ", 30);
-		cameraTargetAngle = SmartDashboard.getNumber("Target Angle: ", 30);
-		cameraTargetDistance = SmartDashboard.getNumber("Target Distance: ", 50);
+		cameraTargetAngle = SmartDashboard.getNumber("targetAngle", 30);
+		cameraTargetDistance = SmartDashboard.getNumber("targetDistance", 50);
 		
 		//Angle from the robot base
 		robotTargetAngle = cameraToCenterAngle(cameraTargetAngle, cameraTargetDistance);
@@ -73,14 +73,13 @@ public class TurnToTargetCommand extends Command {
 			robotTargetAngle = cameraToCenterAngle(cameraTargetAngle, cameraTargetDistance)
 					+ Robot.driveSubsystem.getAngle();
 		}*/
-		double timeDiff = timer.get() - lastTime;
-		lastTime = timer.get();
+
 		
 		error = robotTargetAngle - Robot.driveSubsystem.getAngle();
-		SmartDashboard.putNumber("Error", error);
-		SmartDashboard.putNumber("Angle", Robot.driveSubsystem.getAngle());
+		SmartDashboard.putNumber("error", error);
+		SmartDashboard.putNumber("angle", robotTargetAngle);
 		double output = pid.getOutput(error,robotTargetAngle);
-		SmartDashboard.putNumber("Val motors", output);
+		SmartDashboard.putNumber("rotationPIDOutput", output);
 		Robot.driveSubsystem.drive(output, -output);
 		prevError = error;
 		Timer.delay(DELAY);
@@ -94,6 +93,7 @@ public class TurnToTargetCommand extends Command {
 
 	// Called once after isFinished returns true
 	protected void end() {
+		Robot.driveSubsystem.drive(0, 0);
 	}
 
 	// Called when another command which requires one or more of the same

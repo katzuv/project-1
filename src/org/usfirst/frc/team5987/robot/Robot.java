@@ -42,9 +42,9 @@ public class Robot extends IterativeRobot {
         chooser.addDefault("Default Auto", new ExampleCommand());
 //        chooser.addObject("My Auto", new MyAutoCommand());
         SmartDashboard.putData("Auto mode", chooser);
-        SmartDashboard.putNumber("Pid: p ", RobotMap.ConstantP);
-        SmartDashboard.putNumber("Pid: i ", RobotMap.ConstantI);
-        SmartDashboard.putNumber("Pid: d ", RobotMap.ConstantD);
+        SmartDashboard.putNumber("kpRotation", RobotMap.ConstantP);
+        SmartDashboard.putNumber("kiRotation", RobotMap.ConstantI);
+        SmartDashboard.putNumber("kdRotation", RobotMap.ConstantD);
         pneumaticsSubsystem.startCompressor();
     }
 	
