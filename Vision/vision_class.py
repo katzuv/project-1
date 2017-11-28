@@ -266,7 +266,6 @@ def gen():
     while not stop:
         jpg=cv2.imencode('.jpg',vision.frame.copy())[1].tostring()
         yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + jpg + b'\r\n')
-        print('shut up')
         key=cv2.waitKey(1)
 
 @app.route('/video_feed')
