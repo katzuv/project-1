@@ -10,11 +10,11 @@ public class RobotMap {
 
 	public final static double distancePerPulse = 0.00133;
 
-	public static double ConstantP = 0.1;
+	public static double ConstantP = 0.04;
 	public static double ConstantI = 0;
 	public static double ConstantD = 0;
 
-    public static double distanceFromCenter = 30;
+    public static double distanceFromCenter = 50;
     // For example to map the left and right motors, you could define the
     // following variables to use with your drivetrain subsystem.
     // public static int leftMotor = 1;

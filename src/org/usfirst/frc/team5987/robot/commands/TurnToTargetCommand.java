@@ -17,16 +17,16 @@ public class TurnToTargetCommand extends Command {
 	MiniPID pid;
 	Timer timer = new Timer();
 	double lastTime;
-	
+	double output;
 	// these values you get from the raspberry pi.
 	//double prevCameraTargetAngle = 0;
 	double cameraTargetAngle = 0;
 	double cameraTargetDistance = 0;
 
 	// These are determined at the start of the command
-	double ConstantP=0.05;
-	double ConstantI=0;
-	double ConstantD=0;
+	double ConstantP;
+	double ConstantI;
+	double ConstantD;
 	
 	double DELAY = 0.005;
 
@@ -49,14 +49,14 @@ public class TurnToTargetCommand extends Command {
 		timer.reset();
 		
 		//Getting the constants from smartdashboard.
-		ConstantP = SmartDashboard.getNumber("kpRotation", RobotMap.ConstantP);
-		ConstantI = SmartDashboard.getNumber("kiRotation", RobotMap.ConstantI);
-		ConstantD = SmartDashboard.getNumber("kdRotation", RobotMap.ConstantD);
-		
-		pid = new MiniPID(ConstantP,ConstantI,ConstantD);
+		pid = new MiniPID(0,0,0);
+		pid.setDirection(true);
+		updatePID();
 		//getting the CAMERA VALUES from the raspberry pi
 		//prevCameraTargetAngle = SmartDashboard.getNumber("Target Angle: ", 30);
-		cameraTargetAngle = SmartDashboard.getNumber("targetAngle", 30);
+		
+		cameraTargetAngle = SmartDashboard.getNumber("targetAngle", 90);
+		SmartDashboard.putNumber("targetAngle", cameraTargetAngle);
 		cameraTargetDistance = SmartDashboard.getNumber("targetDistance", 50);
 		
 		//Angle from the robot base
@@ -64,7 +64,14 @@ public class TurnToTargetCommand extends Command {
 		
 		prevError = robotTargetAngle - Robot.driveSubsystem.getAngle();
 	}
-
+	public void updatePID(){
+		ConstantP = SmartDashboard.getNumber("kpRotation", RobotMap.ConstantP);
+		ConstantI = SmartDashboard.getNumber("kiRotation", RobotMap.ConstantI);
+		ConstantD = SmartDashboard.getNumber("kdRotation", RobotMap.ConstantD);
+		pid.setP(ConstantP);
+		pid.setI(ConstantI);
+		pid.setD(ConstantD);
+	}
 	// Called repeatedly when this Command is scheduled to run
 	protected void execute() {
 		//Check if the camera Values changed, and fix the target.
@@ -74,11 +81,13 @@ public class TurnToTargetCommand extends Command {
 					+ Robot.driveSubsystem.getAngle();
 		}*/
 
-		
+		updatePID();
 		error = robotTargetAngle - Robot.driveSubsystem.getAngle();
 		SmartDashboard.putNumber("error", error);
+		
 		SmartDashboard.putNumber("angle", robotTargetAngle);
-		double output = pid.getOutput(error,robotTargetAngle);
+		 output = pid.getOutput(Robot.driveSubsystem.getAngle(), robotTargetAngle);
+
 		SmartDashboard.putNumber("rotationPIDOutput", output);
 		Robot.driveSubsystem.drive(output, -output);
 		prevError = error;
@@ -88,7 +97,7 @@ public class TurnToTargetCommand extends Command {
 
 	// Make this return true when this Command no longer needs to run execute()
 	protected boolean isFinished() {
-		return Math.abs(error) < 1.0;
+		return (Math.abs(error) < 1 && Math.abs(output)<0.3);
 	}
 
 	// Called once after isFinished returns true
