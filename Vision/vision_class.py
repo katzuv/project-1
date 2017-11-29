@@ -21,9 +21,15 @@ class Vision:
             * centers_x : A list of the x values of all centers, empty until the find_center() function is called.
             * centers_y : A list of the y values of all centers, empty until the find_center() function is called.
             * center : The average point of all centers of all contours.
+            * font: The font we'll write the text on the frame with.
+            * calibaration: A boolean that says whether we want to calibrate the distance function.
+            * stream: The stream we may send to a server.
+            * cal_fun: The dictionary of functions by which we can calibrate and filter contours. The first variable in
+            the tuple is the string command, the second one is whether it needs to be average'd.
         """
         self.cam = cv2.VideoCapture(1)
         self.cam.set(cv2.CAP_PROP_SETTINGS,1)
+        self.cam.get(cv2.CAP_PROP_OPENNI_FOCAL_LENGTH)
         _, self.frame = self.cam.read()
         self.show_frame=self.frame.copy()
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
@@ -47,9 +53,9 @@ class Vision:
             self.get_distance=lambda x:eval(func)#if we are not in calibration mode take the function from the file
             file.close()
         else:
-            self.input=0#initiating the input variable
-            self.dist_cal=[]#creates an empty list of
-            self.contour_cal=[]#both distance and contour characteristic
+            self.input=0 # initiating the input variable
+            self.dist_cal=[] # creates an empty list of
+            self.contour_cal=[] #b oth distance and contour characteristic
         """
         Summary: Get SmartDashboard. 
         # Currently unavailable. Instead, create and read a file where all values are stored.
@@ -153,10 +159,12 @@ class Vision:
     def get_contours(self):
         # Executes a command line from SmartDashboard
         command = self.get_item("Command", self.command_s)
+        # Splits the command into separate instructions
         functions = command.split(";")
         self.hulls.clear()
         if len(functions) > 0:
             for fun in functions:
+                # Separates the instruction into method and margin
                 fun = fun.split(",")
                 if fun is not None and len(self.contours) > 0:
                     possible_fit = []
@@ -168,10 +176,13 @@ class Vision:
                     self.contours = possible_fit
 
     def get_angle(self):
+        # Returns the angle of the center of contours from the camera
+        # Currently linear. Will be more accurate after focal length is obtained
         self.angle = self.center[0]*30 / 320 -30
         cv2.putText(self.show_frame, "Angle: {}".format(self.angle), (5, 15), self.font, 0.5, 255)
 
     def measure(self):
+        # Sums all desired variables of all contours. Used for distance measuring
         self.total_cal = 0
         for c in self.contours:
             self.total_cal += eval(self.cal_fun[self.get_item("Method", self.find_by_s)][0])
