@@ -28,8 +28,9 @@ class Vision:
             the tuple is the string command, the second one is whether it needs to be average'd.
         """
         self.cam = cv2.VideoCapture(1)
-        self.cam.set(cv2.CAP_PROP_SETTINGS,1)
-        self.cam.get(cv2.CAP_PROP_OPENNI_FOCAL_LENGTH)
+        # self.cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)
+        # self.cam.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+        self.cam.set(cv2.CAP_PROP_SETTINGS, 1)
         _, self.frame = self.cam.read()
         self.show_frame=self.frame.copy()
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
@@ -50,12 +51,12 @@ class Vision:
         if not self.calibration:
             file=open('function.val','r')
             func=file.read()
-            self.get_distance=lambda x:eval(func)#if we are not in calibration mode take the function from the file
+            self.get_distance=lambda x:eval(func) #if we are not in calibration mode take the function from the file
             file.close()
         else:
             self.input=0 # initiating the input variable
             self.dist_cal=[] # creates an empty list of
-            self.contour_cal=[] #b oth distance and contour characteristic
+            self.contour_cal=[] # both distance and contour characteristic
         """
         Summary: Get SmartDashboard. 
         # Currently unavailable. Instead, create and read a file where all values are stored.
@@ -237,20 +238,6 @@ def index():
     global vision
     return render_template('index.html')
 
-def gen():
-    global stop
-    global vision
-    while not stop:
-        if not vision.calibration:
-            cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
-        else:
-            cv2.putText(vision.show_frame,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-            cv2.putText(vision.show_frame,vision.find_by_s+": "+str(vision.contour_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-            cv2.putText(vision.show_frame,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-        jpg=cv2.imencode('.jpg',vision.show_frame)[1].tostring()
-        yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + jpg + b'\r\n')
-        key=cv2.waitKey(1)
-
 @app.route('/video_feed')
 def video_feed():
     global stop
@@ -285,6 +272,20 @@ def analyse():
             vision.distance=vision.get_distance(vision.measure())
             cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
 
+def gen():
+    global stop
+    global vision
+    while not stop:
+        if not vision.calibration:
+            cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
+        else:
+            cv2.putText(vision.show_frame,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+            cv2.putText(vision.show_frame,vision.find_by_s+": "+str(vision.contour_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+            cv2.putText(vision.show_frame,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+        jpg=cv2.imencode('.jpg',vision.show_frame)[1].tostring()
+        yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + jpg + b'\r\n')
+        key=cv2.waitKey(1)
+
 def show(stream):
     global stop
     global vision
@@ -296,12 +297,12 @@ def show(stream):
             cv2.imshow('Frame',vision.show_frame)
             if vision.calibration:
                 cv2.imshow('Masked',vision.mask)
-            if not vision.calibration:
-                cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
-            else:
+            if vision.calibration:
                 cv2.putText(vision.show_frame,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
                 cv2.putText(vision.show_frame,vision.find_by_s+": "+str(vision.contour_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
                 cv2.putText(vision.show_frame,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+            else:
+                cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             vision.key=cv2.waitKey(1)
             if vision.key is ord('q'):
                 cv2.destroyAllWindows()
