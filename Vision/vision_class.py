@@ -4,7 +4,7 @@ from networktables import NetworkTables
 from flask import Flask, render_template, Response
 from threading import _start_new_thread
 is_stream=False
-is_calibration=True
+is_calibration=False
 
 class Vision:
     def __init__(self, calibration=False):
@@ -22,8 +22,8 @@ class Vision:
             * centers_y : A list of the y values of all centers, empty until the find_center() function is called.
             * center : The average point of all centers of all contours.
         """
-        self.cam = cv2.VideoCapture(0)
-        self.cam.set(cv2.CAP_PROP_AUTO_EXPOSURE,0)
+        self.cam = cv2.VideoCapture(1)
+        self.cam.set(cv2.CAP_PROP_SETTINGS,1)
         _, self.frame = self.cam.read()
         self.show_frame=self.frame.copy()
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
@@ -66,7 +66,6 @@ class Vision:
         execution=file.read()
         exec(execution)
         file.close()
-        print(self.lower_range,self.upper_range)
         self.set_item("Command", self.command_s)
         self.set_item("Draw contours", self.draw_contours_b)
         self.set_item("Draw hulls", self.draw_hulls_b)

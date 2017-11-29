@@ -1,1 +1,1 @@
-self.lower_range,self.upper_range = (36,53,31),(78,243,77)
+self.lower_range,self.upper_range = (20,3,5),(173,255,255)
