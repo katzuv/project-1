@@ -5,6 +5,7 @@ from flask import Flask, render_template, Response
 from threading import _start_new_thread
 is_stream=False
 is_calibration=False
+import math
 
 class Vision:
     def __init__(self, calibration=False):
@@ -46,7 +47,8 @@ class Vision:
         self.calibration=calibration
         self.stream=[]
         self.cal_fun = {'area': ("cv2.contourArea(c)", False), 'extent': ("cv2.contourArea(c) / (cv2.minAreaRect(c)[1][0] * cv2.minAreaRect(c)[1][1])", False),
-                        "height": ("cv2.boundingRect(c)[3]", True), 'hull': ("cv2.contourArea(c) / cv2.contourArea(cv2.convexHull(c))", False)}
+                        "height": ("cv2.boundingRect(c)[3]", True), 'hull': ("cv2.contourArea(c) / cv2.contourArea(cv2.convexHull(c))", False),
+                        "round": ("(math.pi*(cv2.boundingRect(c)[2]+cv2.boundingRect(c)[3])/2)/(2*math.pi*cv2.minEnclosingCircle(c)[1])", False)}
 
         if not self.calibration:
             file=open('function.val','r')
