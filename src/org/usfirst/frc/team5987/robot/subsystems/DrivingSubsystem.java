@@ -15,14 +15,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  *
  */
 public class DrivingSubsystem extends Subsystem {
-	AHRS ahrs = Robot.ahrs;
 	static RobotDrive robotDrive;
 	
 	private static Encoder leftEncoder;
 	private static Encoder rightEncoder;
-
-    public void initDefaultCommand() {
-    	
+	
+	public DrivingSubsystem(){
     	// set ports for the victors using the preassigned values of the RobotMap
     	robotDrive = new RobotDrive(RobotMap.leftFrontMotor,RobotMap.leftRearMotor,RobotMap.rightFrontMotor,RobotMap.rightRearMotor);
     	
@@ -31,6 +29,9 @@ public class DrivingSubsystem extends Subsystem {
     	
     	leftEncoder.setDistancePerPulse(RobotMap.distancePerPulse);
     	rightEncoder.setDistancePerPulse(RobotMap.distancePerPulse);
+	}
+    public void initDefaultCommand() {
+
     	setDefaultCommand(new JoystickDriveCommand());
     }
     /**
@@ -39,24 +40,26 @@ public class DrivingSubsystem extends Subsystem {
      * @param rightValue rightMotor speed -1 <= speed <= 1
      */
     public void drive(double leftValue, double rightValue){
-    	robotDrive.tankDrive(-leftValue, rightValue);
+    	leftValue = limit(-1,1,leftValue);
+    	rightValue = limit(-1,1,rightValue);
+    	robotDrive.tankDrive(-leftValue, -rightValue);
     	getLeftEncoder();
     	getRightEncoder();
     }
     public double getLeftEncoder() {
-    	double distance = leftEncoder.getDistance();
+    	double distance = -leftEncoder.getDistance();
     	SmartDashboard.putNumber("leftEncoder", distance);
     	return distance;
     }
     
     public double getRightEncoder() {
-    	double distance = -rightEncoder.getDistance();
+    	double distance = rightEncoder.getDistance();
     	SmartDashboard.putNumber("rightEncoder", distance);
     	return distance;
     }
     
     public double getAngle() {
-		return ahrs.getAngle();
+		return Robot.ahrs.getAngle();
 
 	}
 	public double limit(double minLimit, double maxLimit, double val) {
@@ -68,7 +71,7 @@ public class DrivingSubsystem extends Subsystem {
 	}
 
 	public void resetNavX() {
-		ahrs.reset();
+		Robot.ahrs.reset();
 	}
 }
 

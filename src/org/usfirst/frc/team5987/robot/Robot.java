@@ -3,11 +3,13 @@ package org.usfirst.frc.team5987.robot;
 
 import org.usfirst.frc.team5987.robot.subsystems.DrivingSubsystem;
 import org.usfirst.frc.team5987.robot.subsystems.ExampleSubsystem;
-import org.usfirst.frc.team5987.robot.subsystems.PneumaticsSubsystem;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
+import edu.wpi.first.wpilibj.livewindow.LiveWindow;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -17,26 +19,25 @@ import edu.wpi.first.wpilibj.command.Scheduler;
  * directory.
  */
 public class Robot extends IterativeRobot {
-	public static final DrivingSubsystem driveSubsystem = new DrivingSubsystem();
 	public static final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
-	public static final PneumaticsSubsystem pneumaticsSubsystem = new PneumaticsSubsystem();
+	public static final DrivingSubsystem driveSubsystem = new DrivingSubsystem();
 	public static OI oi;
+	public static AHRS ahrs;
 
-	Command autonomousCommand;
-//	SendableChooser chooser;
-
-	/**
-	 * This function is run when the robot is first started up and should be
-	 * used for any initialization code.
-	 */
-	public void robotInit() {
+    /**
+     * This function is run when the robot is first started up and should be
+     * used for any initialization code.
+     */
+    public void robotInit() {
+    	ahrs  = new AHRS(SPI.Port.kMXP);
 		oi = new OI();
-//		chooser = new SendableChooser();
-//		chooser.addDefault("Default Auto", new ExampleCommand());
-//		 chooser.addObject("My Auto", new MyAutoCommand());
-//		SmartDashboard.putData("Auto mode", chooser);
-		pneumaticsSubsystem.startCompressor();
-	}
+        SmartDashboard.putNumber("kpRotation", RobotMap.ConstantP);
+        SmartDashboard.putNumber("kiRotation", RobotMap.ConstantI);
+        SmartDashboard.putNumber("kdRotation", RobotMap.ConstantD);
+    }
+	
+	Command autonomousCommand;
+
 
 	/**
 	 * This function is called once each time the robot enters Disabled mode.
@@ -44,7 +45,7 @@ public class Robot extends IterativeRobot {
 	 * the robot is disabled.
 	 */
 	public void disabledInit() {
-		pneumaticsSubsystem.stopCompressor();
+		
 	}
 
 	public void disabledPeriodic() {
@@ -86,24 +87,26 @@ public class Robot extends IterativeRobot {
 
 	public void teleopInit() {
 		// This makes sure that the autonomous stops running when
-		// teleop starts running. If you want the autonomous to
-		// continue until interrupted by another command, remove
-		// this line or comment it out.
-		if (autonomousCommand != null)
-			autonomousCommand.cancel();
-	}
+        // teleop starts running. If you want the autonomous to 
+        // continue until interrupted by another command, remove
+        // this line or comment it out.
+        if (autonomousCommand != null) autonomousCommand.cancel();
+    }
 
-	/**
-	 * This function is called periodically during operator control
-	 */
-	public void teleopPeriodic() {
-		Scheduler.getInstance().run();
-	}
+    /**
+     * This function is called periodically during operator control
+     */
+    public void teleopPeriodic() {
+        Scheduler.getInstance().run();
+        
+        driveSubsystem.drive(oi.leftStick.getY(), oi.rightStick.getY());
+    }
+    
+    /**
+     * This function is called periodically during test mode
+     */
+    public void testPeriodic() {
+        LiveWindow.run();
+    }
 
-	/**
-	 * This function is called periodically during test mode
-	 */
-	public void testPeriodic() {
-		//LiveWindow.run();
-	}
 }
