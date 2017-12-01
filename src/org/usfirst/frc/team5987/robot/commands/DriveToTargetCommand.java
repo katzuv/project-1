@@ -10,35 +10,42 @@ import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
- *@author Dan Katzuv
+ * @author Dan Katzuv
  *
  */
 public class DriveToTargetCommand extends Command {
 	DrivingSubsystem driveSubsystem;
+
 	public DriveToTargetCommand() {
 		// Use requires() here to declare subsystem dependencies
 		// eg. requires(chassis);
 		requires(Robot.driveSubsystem);
 		driveSubsystem = Robot.driveSubsystem;
-		
+
 	}
 
-	MiniPID pid = new MiniPID(RobotMap.driveKp, RobotMap.driveKi, RobotMap.driveKd);
+	double kP = SmartDashboard.getNumber("driveKp", 0);
+	double kI = SmartDashboard.getNumber("driveKi", 0);
+	double kD = SmartDashboard.getNumber("driveKd", 0);
+
+	MiniPID leftPid = new MiniPID(kP, kI, kD);
+	MiniPID rightPid = new MiniPID(kP, kI, kD);
 	Timer time = new Timer();
 	Timer speed = new Timer();
-	double encoderDelta = 0;
+	double leftEncoderDelta = 0;
+	double rightEncoderDelta = 0;
 	boolean reachedTarget = false;
 	double initLeftEncoder, initRightEncoder, initDistanceFromTarget;
-	double gOutput;
+
 	/**
-	 * Initializes the encoders values and the distances from the target.
-	 * Gets the initial encoder values from the subsystem and gets the distance
-	 * from the smart dashboard in meters.
+	 * Initializes the encoders values and the distances from the target. Gets
+	 * the initial encoder values from the driveSubsystem and gets the distance
+	 * from the SmartDashboard in meters.
 	 */
 	private void init() {
 		initLeftEncoder = driveSubsystem.getLeftEncoder();
 		initRightEncoder = driveSubsystem.getRightEncoder();
-		initDistanceFromTarget = SmartDashboard.getNumber("distance", 100);
+		initDistanceFromTarget = SmartDashboard.getNumber("distance", 1);
 	}
 
 	// Called just before this Command runs the first time
@@ -52,25 +59,32 @@ public class DriveToTargetCommand extends Command {
 	// Called repeatedly when this Command is scheduled to run
 	protected void execute() {
 		/**
-		 * The distance the encoders have driven.
+		 * The distance the left motor has driven.
 		 */
-		encoderDelta = ((driveSubsystem.getLeftEncoder() - initLeftEncoder)
-				+ (driveSubsystem.getRightEncoder() - initRightEncoder)) / 2;
+		leftEncoderDelta = driveSubsystem.getLeftEncoder() - initLeftEncoder;
 		/**
-		 * The output from the PID controller.
+		 * The distance the right motor has driven.
 		 */
-		double output = pid.getOutput(initDistanceFromTarget - encoderDelta, 1);
-		gOutput=output;
-		/*if (initDistanceFromTarget != SmartDashboard.getNumber("distance", 1)) {
+		rightEncoderDelta = driveSubsystem.getLeftEncoder() - initRightEncoder;
+		/**
+		 * The output from the PID controllers for the left motor.
+		 */
+		double leftOutput = leftPid.getOutput(leftEncoderDelta, 1);
+		/**
+		 * The output from the PID controllers for the right motor.
+		 */
+		double rightOutput = leftPid.getOutput(rightEncoderDelta, 1);
+
+		if (initDistanceFromTarget != SmartDashboard.getNumber("distance", 1)) {
 			init();
-		}*/
-		driveSubsystem.drive(output, output);
+		}
+		driveSubsystem.drive(leftOutput, rightOutput);
 		time.delay(0.05);
 	}
 
 	// Make this return true when this Command no longer needs to run execute()
 	protected boolean isFinished() {
-		if ((initDistanceFromTarget - encoderDelta - 1) < 0.2 && Math.abs(gOutput) < 0.1) {
+		if ((initDistanceFromTarget - leftEncoderDelta - 1) < 0.2 && (initDistanceFromTarget - rightEncoderDelta - 1) < 0.2) {
 			return true;
 		}
 		return false;
