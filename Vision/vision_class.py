@@ -173,8 +173,8 @@ class Vision:
         cv2.putText(self.show_frame, "Angle: {}".format(self.angle), (5, 15), self.font, 0.5, 255)
 
     def get_distance(self):
-        self.distance=calcs
-        # insert calcs here
+        self.distance=((self.center[1]-self.frame.shape[1])/math.tan(29.85))/37.795
+        cv2.putText(vision.show_frame, "distance: " + str(self.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
 global vision
 global stop
@@ -216,12 +216,12 @@ def analyse():
         vision.draw_contours()
         vision.find_center()
         vision.get_angle()
+        vision.get_distance()
 
 def gen():
     global stop
     global vision
     while not stop:
-        cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
         jpg=cv2.imencode('.jpg',vision.show_frame)[1].tostring()
         yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + jpg + b'\r\n')
         key=cv2.waitKey(1)
@@ -235,11 +235,11 @@ def show(stream):
     else:
         while not stop:
             cv2.imshow('Frame',vision.show_frame)
-            cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             vision.key=cv2.waitKey(1)
             if vision.key is ord('q'):
                 cv2.destroyAllWindows()
                 stop=True
+
 _start_new_thread(get_frame,())
 _start_new_thread(analyse,())
 show(is_stream)
