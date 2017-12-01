@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import math
 from networktables import NetworkTables
 from flask import Flask, render_template, Response
 from threading import _start_new_thread
@@ -28,6 +29,7 @@ class Vision:
             the tuple is the string command, the second one is whether it needs to be average'd.
         """
         self.cam = cv2.VideoCapture(1)
+        self.distance=0
         # self.cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)
         # self.cam.set(cv2.CAP_PROP_AUTOFOCUS, 0)
         self.cam.set(cv2.CAP_PROP_SETTINGS, 1)
@@ -179,7 +181,7 @@ class Vision:
     def get_angle(self):
         # Returns the angle of the center of contours from the camera
         # Currently linear. Will be more accurate after focal length is obtained
-        self.angle = self.center[0]*30 / 320 -30
+        self.angle = math.atan((self.center[0]-self.frame.shape[1]/2)/627.58)*(180/math.pi)
         cv2.putText(self.show_frame, "Angle: {}".format(self.angle), (5, 15), self.font, 0.5, 255)
 
     def measure(self):
@@ -250,6 +252,7 @@ def get_frame():
     global vision
     while not stop:
         _,vision.frame=vision.cam.read()
+        cv2.line(vision.frame,(0,int(vision.frame.shape[0]/2)),(int(vision.frame.shape[1]),int(vision.frame.shape[0]/2)),(0,0,0),int(1),int(1))
         vision.show_frame=vision.frame.copy()
         vision.hsv = cv2.cvtColor(vision.frame, cv2.COLOR_BGR2HSV)
         vision.mask = cv2.inRange(vision.hsv, vision.lower_range, vision.upper_range)
@@ -270,12 +273,14 @@ def analyse():
                 vision.create_poly(5) #5 is the function's deg
         else:
             vision.distance=vision.get_distance(vision.measure())
+            vision.distance=vision.get_distance(vision.measure())
             cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
 
 def gen():
     global stop
     global vision
     while not stop:
+
         if not vision.calibration:
             cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
         else:
