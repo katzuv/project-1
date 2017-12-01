@@ -5,10 +5,9 @@ from networktables import NetworkTables
 from flask import Flask, render_template, Response
 from threading import _start_new_thread
 is_stream=False
-is_calibration=False
 
 class Vision:
-    def __init__(self, calibration=False):
+    def __init__(self):
         """
         Summary: Start camera, read and analyze first frame.
         Parameters:
@@ -45,20 +44,9 @@ class Vision:
         self.centers_y = []
         self.center = (0, 0)
         self.font = cv2.FONT_HERSHEY_SIMPLEX
-        self.calibration=calibration
         self.stream=[]
         self.cal_fun = {'area': ("cv2.contourArea(c)", False), 'extent': ("cv2.contourArea(c) / (cv2.minAreaRect(c)[1][0] * cv2.minAreaRect(c)[1][1])", False),
                         "height": ("cv2.boundingRect(c)[3]", True), 'hull': ("cv2.contourArea(c) / cv2.contourArea(cv2.convexHull(c))", False)}
-
-        if not self.calibration:
-            file=open('function.val','r')
-            func=file.read()
-            self.get_distance=lambda x:eval(func) #if we are not in calibration mode take the function from the file
-            file.close()
-        else:
-            self.input=0 # initiating the input variable
-            self.dist_cal=[] # creates an empty list of
-            self.contour_cal=[] # both distance and contour characteristic
         """
         Summary: Get SmartDashboard. 
         # Currently unavailable. Instead, create and read a file where all values are stored.
@@ -184,55 +172,16 @@ class Vision:
         self.angle = math.atan((self.center[0]-self.frame.shape[1]/2)/627.58)*(180/math.pi)
         cv2.putText(self.show_frame, "Angle: {}".format(self.angle), (5, 15), self.font, 0.5, 255)
 
-    def measure(self):
-        # Sums all desired variables of all contours. Used for distance measuring
-        self.total_cal = 0
-        for c in self.contours:
-            self.total_cal += eval(self.cal_fun[self.get_item("Method", self.find_by_s)][0])
-            if self.cal_fun[self.get_item("Method", self.find_by_s)][1]:
-                self.total_cal = self.total_cal / len(self.contours)
-        return self.total_cal
+    def get_distance(self):
+        self.distance=calcs
+        # insert calcs here
 
-    def numbers_input(self,key):
-        """
-        uses the numpad as a way of writing distance
-        :param key: gets keyboard key from the process
-        :return:
-        """
-        if key in range(48,58):#48-58 are the possible numbers
-            self.input *= 10
-            self.input += key-48
-        if key is 13: #13 is Enter
-            self.dist_cal.append(self.input)
-            self.contour_cal.append(self.measure())
-            self.input=0
-        if key is 8: #8 is backspace
-            if self.input is 0:
-                self.dist_cal.pop(len(self.dist_cal)-1)#if the number is 0 remove the last dist inserted
-                self.contour_cal.pop(len(self.contour_cal)-1)#if the number is 0 remove the last area inserted
-            self.input/=10
-            self.input=int(self.input)
-
-    def create_poly(self,deg):
-        """
-        this function creates a function of degree deg
-        :param deg: the degree of the funtion
-        :return: writes to a file the wanted function
-        """
-        polyfit=np.polyfit(self.contour_cal,self.dist_cal,deg=deg)
-        polyfit=list(polyfit)
-        string='0'
-        for i in polyfit:
-            string += '+'+str(i)+'*x**'+str((deg-polyfit.index(i)))
-        file=open('function.val','w')
-        file.write(string)
-        file.close()
 global vision
 global stop
 global app
 app = Flask(__name__)
 stop=False
-vision=Vision(is_calibration)
+vision=Vision()
 vision.key=-1
 @app.route('/')
 def index():
@@ -267,26 +216,12 @@ def analyse():
         vision.draw_contours()
         vision.find_center()
         vision.get_angle()
-        if vision.calibration:
-            vision.numbers_input(vision.key)
-            if vision.key is ord('p') and vision.calibration:
-                vision.create_poly(5) #5 is the function's deg
-        else:
-            vision.distance=vision.get_distance(vision.measure())
-            vision.distance=vision.get_distance(vision.measure())
-            cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
 
 def gen():
     global stop
     global vision
     while not stop:
-
-        if not vision.calibration:
-            cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
-        else:
-            cv2.putText(vision.show_frame,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-            cv2.putText(vision.show_frame,vision.find_by_s+": "+str(vision.contour_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-            cv2.putText(vision.show_frame,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
+        cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255, 255, 255), 2, cv2.LINE_AA)
         jpg=cv2.imencode('.jpg',vision.show_frame)[1].tostring()
         yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + jpg + b'\r\n')
         key=cv2.waitKey(1)
@@ -300,14 +235,7 @@ def show(stream):
     else:
         while not stop:
             cv2.imshow('Frame',vision.show_frame)
-            if vision.calibration:
-                cv2.imshow('Masked',vision.mask)
-            if vision.calibration:
-                cv2.putText(vision.show_frame,"input: "+str(vision.input),(50,50), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-                cv2.putText(vision.show_frame,vision.find_by_s+": "+str(vision.contour_cal),(50,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-                cv2.putText(vision.show_frame,"distance: "+str(vision.dist_cal),(50,150), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),2,cv2.LINE_AA)
-            else:
-                cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(vision.show_frame, "distance: " + str(vision.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
             vision.key=cv2.waitKey(1)
             if vision.key is ord('q'):
                 cv2.destroyAllWindows()
