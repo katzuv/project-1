@@ -87,11 +87,14 @@ public class TurnToTargetCommand extends Command {
 		
 		SmartDashboard.putNumber("angle", robotTargetAngle);
 		 output = pid.getOutput(Robot.driveSubsystem.getAngle(), robotTargetAngle);
-
+		SmartDashboard.putNumber("rotationPOutput", pid.getP());
+		SmartDashboard.putNumber("rotationIOutput", pid.getI());
+		SmartDashboard.putNumber("rotationDOutput", pid.getD());
 		SmartDashboard.putNumber("rotationPIDOutput", output);
 		Robot.driveSubsystem.drive(output, -output);
 		prevError = error;
 		Timer.delay(DELAY);
+		SmartDashboard.putNumber("errorRotation", error);
 		//prevCameraTargetAngle = cameraTargetAngle;
 	}
 
