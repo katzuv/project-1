@@ -27,7 +27,7 @@ class Vision:
             * cal_fun: The dictionary of functions by which we can calibrate and filter contours. The first variable in
             the tuple is the string command, the second one is whether it needs to be average'd.
         """
-        self.cam = cv2.VideoCapture(1)
+        self.cam = cv2.VideoCapture(2)
         self.distance=0
         # self.cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)
         # self.cam.set(cv2.CAP_PROP_AUTOFOCUS, 0)
@@ -69,6 +69,8 @@ class Vision:
         self.set_item("DiRode iterations", self.dirode_iterations_i)
         self.set_item("Find center", self.find_center_b)
         self.set_item("Method", self.find_by_s)
+        self.set_item("Focal length", self.focal_l_f)
+        self.set_item("Real height", self.real_height_f)
     def set_item(self, key, value):
         """
         Summary: Add a value to SmartDashboard.
@@ -127,13 +129,9 @@ class Vision:
 
     def dirode(self):
         # Dialates and erodes the mask to reduce static and make the image clearer
-        kernel = np.array([
-            [0, 1, 0],
-            [1, 1, 1],
-            [0, 1, 0]
-        ])
-        cv2.dilate(self.mask, kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
-        cv2.erode(self.mask, kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
+        kernel = np.ones((5, 5), dtype=np.uint8)
+        self.mask=cv2.dilate(self.mask, kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
+        self.mask=cv2.erode(self.mask, kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
 
     def find_center(self):
         # Finds the average of all centers of all contours
@@ -157,7 +155,7 @@ class Vision:
             for fun in functions:
                 # Separates the instruction into method and margin
                 fun = fun.split(",")
-                if fun is not None and len(self.contours) > 0:
+                if fun[0] is not '' and len(self.contours) > 0:
                     possible_fit = []
                     for c in self.contours:
                         if float(fun[2]) > float(eval(self.cal_fun[fun[0]][0])) > float(fun[1]):
@@ -169,12 +167,14 @@ class Vision:
     def get_angle(self):
         # Returns the angle of the center of contours from the camera
         # Currently linear. Will be more accurate after focal length is obtained
-        self.angle = math.atan((self.center[0]-self.frame.shape[1]/2)/627.58)*(180/math.pi)
+        self.angle = math.atan((self.center[0]-self.frame.shape[1]/2)/self.get_item("Focal length", self.focal_l_f))*(180/math.pi)
         cv2.putText(self.show_frame, "Angle: {}".format(self.angle), (5, 15), self.font, 0.5, 255)
 
     def get_distance(self):
-        self.distance=((self.center[1]-self.frame.shape[1])/math.tan(29.85))/37.795
+        alpha=-math.atan((self.center[1]-self.frame.shape[1]/2)/self.get_item("Focal length", self.focal_l_f))
+        self.distance=self.get_item("Real height", self.real_height_f)/math.tan(alpha)
         cv2.putText(vision.show_frame, "distance: " + str(self.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(vision.show_frame, "alpha: " + str(alpha*(180/math.pi)), (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
 global vision
 global stop
@@ -201,7 +201,7 @@ def get_frame():
     global vision
     while not stop:
         _,vision.frame=vision.cam.read()
-        cv2.line(vision.frame,(0,int(vision.frame.shape[0]/2)),(int(vision.frame.shape[1]),int(vision.frame.shape[0]/2)),(0,0,0),int(1),int(1))
+        # cv2.line(vision.frame,(0,int(vision.frame.shape[0]/2)),(int(vision.frame.shape[1]),int(vision.frame.shape[0]/2)),(0,0,0),int(1),int(1))
         vision.show_frame=vision.frame.copy()
         vision.hsv = cv2.cvtColor(vision.frame, cv2.COLOR_BGR2HSV)
         vision.mask = cv2.inRange(vision.hsv, vision.lower_range, vision.upper_range)
@@ -210,6 +210,7 @@ def analyse():
     global stop
     global vision
     while not stop:
+        vision.dirode()
         _, contours, _ = cv2.findContours(vision.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         vision.contours=list(contours)
         vision.get_contours()
@@ -235,6 +236,7 @@ def show(stream):
     else:
         while not stop:
             cv2.imshow('Frame',vision.show_frame)
+            cv2.imshow('Mask', vision.mask)
             vision.key=cv2.waitKey(1)
             if vision.key is ord('q'):
                 cv2.destroyAllWindows()
