@@ -4,7 +4,7 @@ import math
 from networktables import NetworkTables
 from flask import Flask, render_template, Response
 from threading import _start_new_thread
-is_stream=False
+is_stream=True
 
 class Vision:
     def __init__(self):
@@ -203,13 +203,13 @@ def get_frame():
         _,vision.frame=vision.cam.read()
         # cv2.line(vision.frame,(0,int(vision.frame.shape[0]/2)),(int(vision.frame.shape[1]),int(vision.frame.shape[0]/2)),(0,0,0),int(1),int(1))
         vision.show_frame=vision.frame.copy()
-        vision.hsv = cv2.cvtColor(vision.frame, cv2.COLOR_BGR2HSV)
-        vision.mask = cv2.inRange(vision.hsv, vision.lower_range, vision.upper_range)
         key=cv2.waitKey(1)
 def analyse():
     global stop
     global vision
     while not stop:
+        vision.hsv = cv2.cvtColor(vision.frame, cv2.COLOR_BGR2HSV)
+        vision.mask = cv2.inRange(vision.hsv, vision.lower_range, vision.upper_range)
         vision.dirode()
         _, contours, _ = cv2.findContours(vision.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         vision.contours=list(contours)
