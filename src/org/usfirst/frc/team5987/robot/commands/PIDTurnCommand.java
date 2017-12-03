@@ -1,17 +1,21 @@
 package org.usfirst.frc.team5987.robot.commands;
 
+import org.usfirst.frc.team5987.robot.Robot;
 import org.usfirst.frc.team5987.robot.RobotMap;
 
 import auxiliary.MiniPID;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
  *
  */
-public class PIDTurnCommand extends Command {
-	protected double constantP,constantI,constantD;
+public abstract class PIDTurnCommand extends Command {
+	protected double DELAY;
+	protected double startingAngle;
 	protected MiniPID pid;
+	Timer timer = new Timer();
     public PIDTurnCommand() {
         // Use requires() here to declare subsystem dependencies
         // eg. requires(chassis);
@@ -19,23 +23,30 @@ public class PIDTurnCommand extends Command {
 
     // Called just before this Command runs the first time
     protected void initialize() {
-    	pid = new MiniPID(constantP,constantI,constantD);
+    	startingAngle = updateAngle();
+		timer.reset();
+		
+		//Getting the constants from smartdashboard.
+		pid = new MiniPID(getKP(),getKI(),getKD());
+		pid.setDirection(true);
+		updatePID();
+		
+		
     }
 
     // Called repeatedly when this Command is scheduled to run
     protected void execute() {
     	updateAngle();
     	updateSetpoint();
-    	constantP = updateP();
-    	constantI = updateI();
-    	constantD = updateD();
-    	
     	updatePID();
+    	pid.setSetpoint(updateSetpoint());
+    	setMotors(getOutput());
+    	Timer.delay(DELAY);
     }
 
     // Make this return true when this Command no longer needs to run execute()
     protected boolean isFinished() {
-        return false;
+        return checkFinished();
     }
 
     // Called once after isFinished returns true
@@ -46,43 +57,44 @@ public class PIDTurnCommand extends Command {
     // subsystems is scheduled to run
     protected void interrupted() {
     }
-    protected double updateP(){
-    	throw new Error("Must Extend updateP() method, and return a double!");
-    }
-    protected double updateI(){
-    	throw new Error("Must Extend updateI() method, and return a double!");
-    }
-    protected double updateD(){
-    	throw new Error("Must Extend updateD() method, and return a double!");
-    }
-    protected double updateAngle(){
-    	throw new Error("Must Extend updateAngle() method, and return a double!");
-    }
-    protected double updateSetpoint(){
-    	throw new Error("Must Extend updateSetpoint() method, and return a double!");
-    }
-    protected double updateMaxError(){
-    	throw new Error("Must Extend updateMaxError() method, and return a double!");
-    }
-    protected double updateMinError(){
-    	throw new Error("Must Extend updateMinError() method, and return a double!");
-    }
-    public double getP(){
-    	return constantP;
-    }
-    public double getI(){
-    	return constantI;
-    }
-    public double getD(){
-    	return constantD;
+    
+    protected double getOutput(){
+    	return pid.getOutput(updateAngle(), updateSetpoint());
     }
     /**
      * updates the MiniPID class.
      */
-	public void updatePID(){
-		pid.setP(constantP);
-		pid.setI(constantI);
-		pid.setD(constantD);
+	protected void updatePID(){
+		pid.setP(getKP());
+		pid.setI(getKI());
+		pid.setD(getKD());
 	}
-	
+	/**
+	 * Override this to return the constant P.
+	 */
+    protected abstract double getKP();
+	/**
+	 * Override this to return the constant I.
+	 */
+    protected abstract double getKI();
+	/**
+	 * Override this to return the constant D.
+	 */
+    protected abstract double getKD();
+	/**
+	 * Override this to return the current angle.
+	 */
+    protected abstract double updateAngle();
+	/**
+	 * Override this to return the goal.
+	 */
+    protected abstract double updateSetpoint();
+	/**
+	 * Override this to return the condition in which the program stops.
+	 */
+    protected abstract boolean checkFinished();
+	/**
+	 * Override this and apply the strengths of the motors using (double output).
+	 */
+    protected abstract void setMotors(double output);
 }

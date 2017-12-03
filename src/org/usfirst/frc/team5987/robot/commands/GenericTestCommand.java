@@ -1,5 +1,8 @@
 package org.usfirst.frc.team5987.robot.commands;
 
+import org.usfirst.frc.team5987.robot.Robot;
+import org.usfirst.frc.team5987.robot.RobotMap;
+
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -7,39 +10,65 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  *
  */
 public class GenericTestCommand extends PIDTurnCommand {
-
+	double startingCamAngle, startingCamDistance;
     public GenericTestCommand() {
         // Use requires() here to declare subsystem dependencies
-        // eg. requires(chassis);
+        requires(Robot.driveSubsystem);
+        
     }
-    protected double updateP(){
-    	return SmartDashboard.getNumber("P whatever", 0);
-    }
-    protected double updateI(){
-    	return SmartDashboard.getNumber("P whatever", 0);
-    }
-    protected double updateD(){
-    	return SmartDashboard.getNumber("P whatever", 0);
-    }
-    // Called just before this Command runs the first time
+    @Override
     protected void initialize() {
+    	startingCamAngle = SmartDashboard.getNumber("targetAngle", 90);
+    	startingCamDistance = SmartDashboard.getNumber("targetDistance", 50);
+    	super.initialize();
+    	
     }
+	@Override
+	protected double getKP() {
+		return SmartDashboard.getNumber("kpRotation", RobotMap.ConstantP);
+	}
 
-    // Called repeatedly when this Command is scheduled to run
-//    protected void execute() {
-//    }
+	@Override
+	protected double getKI() {
+		// TODO Auto-generated method stub
+		return SmartDashboard.getNumber("kiRotation", RobotMap.ConstantI);
+	}
 
-    // Make this return true when this Command no longer needs to run execute()
-    protected boolean isFinished() {
-        return false;
-    }
+	@Override
+	protected double getKD() {
+		// TODO Auto-generated method stub
+		return SmartDashboard.getNumber("kdRotation", RobotMap.ConstantD);
+	}
 
-    // Called once after isFinished returns true
-    protected void end() {
-    }
+	@Override
+	protected double updateAngle() {
+		// TODO Auto-generated method stub
+		return Robot.driveSubsystem.getAngle();
+	}
 
-    // Called when another command which requires one or more of the same
-    // subsystems is scheduled to run
-    protected void interrupted() {
-    }
+	@Override
+	protected double updateSetpoint() {
+		// TODO Auto-generated method stub
+		return cameraToCenterAngle(startingCamAngle, startingCamDistance);
+	}
+
+	@Override
+	protected boolean checkFinished() {
+		return Math.abs((updateAngle()-updateSetpoint()))<0.9;
+	}
+
+	@Override
+	protected void setMotors(double output) {
+		Robot.driveSubsystem.drive(getOutput(), -getOutput());
+		
+	}
+	
+	private double cameraToCenterAngle(double camAngle, double camDistance){
+		camAngle = Math.toRadians(camAngle);
+		return Math.toDegrees(
+				Math.atan(
+				(camDistance * Math.sin(camAngle))
+				/ (camDistance * Math.cos(camAngle) + RobotMap.distanceFromCenter))
+			);
+	}
 }
