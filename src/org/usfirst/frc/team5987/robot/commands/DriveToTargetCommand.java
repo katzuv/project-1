@@ -1,10 +1,10 @@
 package org.usfirst.frc.team5987.robot.commands;
 
 import org.usfirst.frc.team5987.robot.Robot;
-import org.usfirst.frc.team5987.robot.RobotMap;
 import org.usfirst.frc.team5987.robot.subsystems.DrivingSubsystem;
 
 import auxiliary.MiniPID;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -15,16 +15,17 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class DriveToTargetCommand extends Command {
 	DrivingSubsystem driveSubsystem;
+	
+	
 
 	public DriveToTargetCommand() {
 		// Use requires() here to declare subsystem dependencies
 		// eg. requires(chassis);
 		requires(Robot.driveSubsystem);
 		driveSubsystem = Robot.driveSubsystem;
-
 	}
 
-	double kP = SmartDashboard.getNumber("driveKp", 0);
+	double kP = SmartDashboard.getNumber("driveKp", 0.15);
 	double kI = SmartDashboard.getNumber("driveKi", 0);
 	double kD = SmartDashboard.getNumber("driveKd", 0);
 
@@ -45,13 +46,14 @@ public class DriveToTargetCommand extends Command {
 	private void init() {
 		initLeftEncoder = driveSubsystem.getLeftEncoder();
 		initRightEncoder = driveSubsystem.getRightEncoder();
-		initDistanceFromTarget = SmartDashboard.getNumber("distance", 1);
+		initDistanceFromTarget = SmartDashboard.getNumber("distance", 3);
+		System.out.println("START");
 	}
 
 	// Called just before this Command runs the first time
 	protected void initialize() {
 		init();
-
+		SmartDashboard.putString("State", "START");
 		time.reset();
 		time.start();
 	}
@@ -79,6 +81,11 @@ public class DriveToTargetCommand extends Command {
 			init();
 		}
 		driveSubsystem.drive(leftOutput, rightOutput);
+		SmartDashboard.putNumber("Right output", rightOutput);
+		SmartDashboard.putNumber("Left output", leftOutput);
+		SmartDashboard.putNumber("Right output", rightOutput);
+		SmartDashboard.putNumber("left error", initDistanceFromTarget - leftOutput);
+		SmartDashboard.putNumber("right error", initDistanceFromTarget - rightOutput);
 		time.delay(0.05);
 	}
 
@@ -93,6 +100,7 @@ public class DriveToTargetCommand extends Command {
 	// Called once after isFinished returns true
 	protected void end() {
 		driveSubsystem.drive(0, 0);
+		SmartDashboard.putString("State", "END");
 	}
 
 	// Called when another command which requires one or more of the same

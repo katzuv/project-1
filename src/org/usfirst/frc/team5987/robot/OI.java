@@ -1,6 +1,7 @@
 package org.usfirst.frc.team5987.robot;
 
 
+import org.usfirst.frc.team5987.robot.commands.DriveToTargetCommand;
 import org.usfirst.frc.team5987.robot.commands.TurnToTargetCommand;
 
 import edu.wpi.first.wpilibj.Joystick;
@@ -22,6 +23,7 @@ public class OI {
     public Joystick leftStick = new Joystick(0);
     public Joystick rightStick = new Joystick(1);
     Button leftCenterBtn = new JoystickButton(leftStick, 3);
+    Button button = new JoystickButton(leftStick, 1);
     // There are a few additional built in buttons you can use. Additionally,
     // by subclassing Button you can create custom triggers and bind those to
     // commands the same as any other Button.
@@ -72,5 +74,6 @@ public class OI {
 	// button.whenReleased(new ExampleCommand());
 	public OI() {
 		leftCenterBtn.whenPressed(new TurnToTargetCommand());
+		button.whenPressed(new DriveToTargetCommand());
 	}
 }
