@@ -10,9 +10,9 @@ public class RobotMap {
 
 	public final static double distancePerPulse = 0.00133;
 
-	public static double ConstantP = 0.04;
-	public static double ConstantI = 0;
-	public static double ConstantD = 0;
+	public static double ConstantP = 0.45;
+	public static double ConstantI = 0.001;
+	public static double ConstantD = 0.2;
 
     public static double distanceFromCenter = 50;
     // For example to map the left and right motors, you could define the

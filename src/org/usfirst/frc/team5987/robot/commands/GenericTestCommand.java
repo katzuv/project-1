@@ -3,6 +3,7 @@ package org.usfirst.frc.team5987.robot.commands;
 import org.usfirst.frc.team5987.robot.Robot;
 import org.usfirst.frc.team5987.robot.RobotMap;
 
+import auxiliary.MiniPID;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -22,6 +23,14 @@ public class GenericTestCommand extends PIDTurnCommand {
     	startingCamDistance = SmartDashboard.getNumber("targetDistance", 50);
     	super.initialize();
     	
+    }
+    
+    @Override
+    protected void execute() {
+    	// TODO Auto-generated method stub
+    	super.execute();
+    	SmartDashboard.putNumber("error", getError());
+    	SmartDashboard.putNumber("errorRotation", getError());
     }
 	@Override
 	protected double getKP() {
@@ -54,12 +63,13 @@ public class GenericTestCommand extends PIDTurnCommand {
 
 	@Override
 	protected boolean checkFinished() {
-		return Math.abs((updateAngle()-updateSetpoint()))<0.9;
+//		return Math.abs(getError())<0.9;
+		return false;
 	}
 
 	@Override
 	protected void setMotors(double output) {
-		Robot.driveSubsystem.drive(getOutput(), -getOutput());
+		Robot.driveSubsystem.drive(output, -output);
 		
 	}
 	

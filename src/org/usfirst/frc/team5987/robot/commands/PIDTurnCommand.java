@@ -97,4 +97,7 @@ public abstract class PIDTurnCommand extends Command {
 	 * Override this and apply the strengths of the motors using (double output).
 	 */
     protected abstract void setMotors(double output);
+    public double getError(){
+    	return updateSetpoint() - updateAngle();
+    }
 }
