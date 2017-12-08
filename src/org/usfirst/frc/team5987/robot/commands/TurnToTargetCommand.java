@@ -2,6 +2,7 @@ package org.usfirst.frc.team5987.robot.commands;
 
 import org.usfirst.frc.team5987.robot.Robot;
 import auxiliary.MiniPID;
+import auxiliary.SynchronousPID;
 import org.usfirst.frc.team5987.robot.RobotMap;
 import org.usfirst.frc.team5987.robot.subsystems.DrivingSubsystem;
 
@@ -50,7 +51,6 @@ public class TurnToTargetCommand extends Command {
 		
 		//Getting the constants from smartdashboard.
 		pid = new MiniPID(0,0,0);
-		pid.setDirection(true);
 		updatePID();
 		//getting the CAMERA VALUES from the raspberry pi
 		//prevCameraTargetAngle = SmartDashboard.getNumber("Target Angle: ", 30);
@@ -68,9 +68,7 @@ public class TurnToTargetCommand extends Command {
 		ConstantP = SmartDashboard.getNumber("kpRotation", RobotMap.ConstantP);
 		ConstantI = SmartDashboard.getNumber("kiRotation", RobotMap.ConstantI);
 		ConstantD = SmartDashboard.getNumber("kdRotation", RobotMap.ConstantD);
-		pid.setP(ConstantP);
-		pid.setI(ConstantI);
-		pid.setD(ConstantD);
+		pid.setPID(ConstantP, ConstantI, ConstantD);
 	}
 	// Called repeatedly when this Command is scheduled to run
 	protected void execute() {
@@ -87,6 +85,7 @@ public class TurnToTargetCommand extends Command {
 		
 		SmartDashboard.putNumber("angle", robotTargetAngle);
 		 output = pid.getOutput(Robot.driveSubsystem.getAngle(), robotTargetAngle);
+		 output = -output;
 		SmartDashboard.putNumber("rotationPOutput", pid.getP());
 		SmartDashboard.putNumber("rotationIOutput", pid.getI());
 		SmartDashboard.putNumber("rotationDOutput", pid.getD());
@@ -100,7 +99,10 @@ public class TurnToTargetCommand extends Command {
 
 	// Make this return true when this Command no longer needs to run execute()
 	protected boolean isFinished() {
-		return (Math.abs(error) < 1 && Math.abs(output)<0.3);
+		if(ConstantD!=0)
+			return (Math.abs(error) < 1.0 && pid.getD()/ConstantD<0.4);
+		return Math.abs(error) < 1.0;
+		//(Math.abs(error) < 1 && Math.abs(output)<0.16)
 	}
 
 	// Called once after isFinished returns true
@@ -120,12 +122,13 @@ public class TurnToTargetCommand extends Command {
 	 * @return Robot center angle
 	 */
 	private double cameraToCenterAngle(double camAngle, double camDistance){
-		camAngle = Math.toRadians(camAngle);
-		return Math.toDegrees(
-				Math.atan(
-				(camDistance * Math.sin(camAngle))
-				/ (camDistance * Math.cos(camAngle) + RobotMap.distanceFromCenter))
-			);
+//		camAngle = Math.toRadians(camAngle);
+//		return Math.toDegrees(
+//				Math.atan(
+//				(camDistance * Math.sin(camAngle))
+//				/ (camDistance * Math.cos(camAngle) + RobotMap.distanceFromCenter))
+//			);
+		return camAngle;
 	}
 }
 
