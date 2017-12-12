@@ -1,5 +1,6 @@
 package org.usfirst.frc.team5987.robot;
 
+import edu.wpi.first.wpilibj.GenericHID;
 import org.usfirst.frc.team5987.robot.subsystems.DrivingSubsystem;
 import org.usfirst.frc.team5987.robot.subsystems.ExampleSubsystem;
 
@@ -104,8 +105,16 @@ public class Robot extends IterativeRobot {
 	 */
 	public void teleopPeriodic() {
 		Scheduler.getInstance().run();
-
-		driveSubsystem.drive(oi.leftStick.getY(), oi.rightStick.getY());
+		if (SmartDashboard.getBoolean("Sees target", false))
+		{
+			oi.xbox.setRumble(GenericHID.RumbleType.kLeftRumble,1);
+			oi.xbox.setRumble(GenericHID.RumbleType.kRightRumble,1);
+		}
+		else
+        {
+            oi.xbox.setRumble(GenericHID.RumbleType.kLeftRumble,0);
+            oi.xbox.setRumble(GenericHID.RumbleType.kRightRumble,0);
+        }
 	}
 
 	/**
