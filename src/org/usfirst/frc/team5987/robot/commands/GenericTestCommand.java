@@ -25,13 +25,6 @@ public class GenericTestCommand extends PIDTurnCommand {
     	
     }
     
-    @Override
-    protected void execute() {
-    	// TODO Auto-generated method stub
-    	super.execute();
-    	SmartDashboard.putNumber("error", getError());
-    	SmartDashboard.putNumber("errorRotation", getError());
-    }
 	@Override
 	protected double getKP() {
 		return SmartDashboard.getNumber("kpRotation", RobotMap.ConstantP);
@@ -73,6 +66,12 @@ public class GenericTestCommand extends PIDTurnCommand {
 		
 	}
 	
+	@Override
+	protected void printValues(){
+    	SmartDashboard.putNumber("error", getError());
+    	SmartDashboard.putNumber("errorRotation", getError());
+    	
+	}
 	private double cameraToCenterAngle(double camAngle, double camDistance){
 		camAngle = Math.toRadians(camAngle);
 		return Math.toDegrees(

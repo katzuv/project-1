@@ -41,7 +41,8 @@ public abstract class PIDTurnCommand extends Command {
     	updatePID();
     	pid.setSetpoint(updateSetpoint());
     	setMotors(getOutput());
-    	Timer.delay(DELAY);
+    	Timer.delay(DELAY); 
+    	printValues();
     }
 
     // Make this return true when this Command no longer needs to run execute()
@@ -97,6 +98,10 @@ public abstract class PIDTurnCommand extends Command {
 	 * Override this and apply the strengths of the motors using (double output).
 	 */
     protected abstract void setMotors(double output);
+    /**
+     * Place in this class the values you want to print.
+     */
+    protected abstract void printValues();
     public double getError(){
     	return updateSetpoint() - updateAngle();
     }
