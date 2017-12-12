@@ -20,9 +20,12 @@ public class RobotMap {
     // public static int leftMotor = 1;
     // public static int rightMotor = 2;
   
-    public static double driveKp = 0;
-    public static double driveKi = 0;
-    public static double driveKd = 0;
+    public static double leftDriveKp = 0.93;
+    public static double leftDriveKi = 0.007;
+    public static double leftDriveKd = 20;
+    public static double rightDriveKp = 0.95;
+    public static double rightDriveKi = 0.007;
+    public static double rightDriveKd = 20.0;
 
     public static int leftFrontMotor = 6;
     public static int leftRearMotor = 7;
