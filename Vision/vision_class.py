@@ -27,11 +27,11 @@ class Vision:
             * cal_fun: The dictionary of functions by which we can calibrate and filter contours. The first variable in
             the tuple is the string command, the second one is whether it needs to be average'd.
         """
-        self.cam = cv2.VideoCapture(2)
+        self.cam = cv2.VideoCapture(0)
         self.distance=0
         # self.cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)
         # self.cam.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-        self.cam.set(cv2.CAP_PROP_SETTINGS, 1)
+        # self.cam.set(cv2.CAP_PROP_SETTINGS, 1)
         _, self.frame = self.cam.read()
         self.show_frame=self.frame.copy()
         self.hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
@@ -52,12 +52,7 @@ class Vision:
         # Currently unavailable. Instead, create and read a file where all values are stored.
         # BTW, why is this one a different color?
         """
-        #NetworkTables.initialize(server="roborio-5987-frc.local")
-        try:
-            NetworkTables.setServerMode()
-            NetworkTables.initialize(server="192.168.1.16")
-        except:
-            pass
+        NetworkTables.initialize(server="roborio-5987-frc.local")
         self.table = NetworkTables.getTable("SmartDashboard")
         file = open('Values.val','r')
         execution=file.read()
@@ -71,6 +66,7 @@ class Vision:
         self.set_item("Method", self.find_by_s)
         self.set_item("Focal length", self.focal_l_f)
         self.set_item("Real height", self.real_height_f)
+        self.set_item("Sees target", False)
     def set_item(self, key, value):
         """
         Summary: Add a value to SmartDashboard.
@@ -172,7 +168,10 @@ class Vision:
 
     def get_distance(self):
         alpha=-math.atan((self.center[1]-self.frame.shape[1]/2)/self.get_item("Focal length", self.focal_l_f))
-        self.distance=self.get_item("Real height", self.real_height_f)/math.tan(alpha)
+        try:
+            self.distance=self.get_item("Real height", self.real_height_f)/math.tan(alpha)
+        except ZeroDivisionError:
+            pass
         cv2.putText(vision.show_frame, "distance: " + str(self.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
         cv2.putText(vision.show_frame, "alpha: " + str(alpha*(180/math.pi)), (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
@@ -214,10 +213,12 @@ def analyse():
         _, contours, _ = cv2.findContours(vision.mask.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         vision.contours=list(contours)
         vision.get_contours()
-        vision.draw_contours()
-        vision.find_center()
-        vision.get_angle()
-        vision.get_distance()
+        if (len(vision.contours)) > 0:
+            vision.set_item("Sees target", True)
+            vision.draw_contours()
+            vision.find_center()
+            vision.get_angle()
+            vision.get_distance()
 
 def gen():
     global stop
@@ -232,7 +233,7 @@ def show(stream):
     global vision
     global app
     if stream:
-        app.run(host='localhost', debug=False)
+        app.run(host='10.59.87.215', debug=False)
     else:
         while not stop:
             cv2.imshow('Frame',vision.show_frame)
