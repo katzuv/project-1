@@ -19,7 +19,7 @@ public class GenericTestCommand extends PIDTurnCommand {
     }
     @Override
     protected void initialize() {
-    	startingCamAngle = SmartDashboard.getNumber("targetAngle", 90);
+    	startingCamAngle = SmartDashboard.getNumber("targetAngle", 80);
     	startingCamDistance = SmartDashboard.getNumber("targetDistance", 50);
     	super.initialize();
     	

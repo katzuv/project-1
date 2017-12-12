@@ -15,7 +15,11 @@ public class MiniPID {
 	// **********************************
 	// Class private variables
 	// **********************************
-
+	private double Poutput;
+	private double Ioutput;
+	private double Doutput;
+	private double Foutput;
+	
 	private double P = 0;
 	private double I = 0;
 	private double D = 0;
@@ -113,7 +117,15 @@ public class MiniPID {
 		P = p;
 		checkSigns();
 	}
-
+	public double getP(){
+		return Poutput;
+	}
+	public double getI(){
+		return Ioutput;
+	}
+	public double getD(){
+		return Doutput;
+	}
 	/**
 	 * Changes the I parameter <br>
 	 * This is used for overcoming disturbances, and ensuring that the
@@ -196,6 +208,7 @@ public class MiniPID {
 	 *            Derivative gain. Responds quickly to large changes in error.
 	 *            Small values prevents P and I terms from causing overshoot.
 	 */
+
 	public void setPID(double p, double i, double d) {
 		P = p;
 		D = d;
@@ -321,10 +334,7 @@ public class MiniPID {
 	 */
 	public double getOutput(double actual, double setpoint) {
 		double output;
-		double Poutput;
-		double Ioutput;
-		double Doutput;
-		double Foutput;
+
 
 		this.setpoint = setpoint;
 
@@ -431,6 +441,7 @@ public class MiniPID {
 	public double getOutput() {
 		return getOutput(lastActual, setpoint);
 	}
+	
 
 	/**
 	 * Calculate the output value for the current PID cycle.<br>
