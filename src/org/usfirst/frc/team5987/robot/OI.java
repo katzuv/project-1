@@ -1,6 +1,7 @@
 package org.usfirst.frc.team5987.robot;
 
 
+import org.usfirst.frc.team5987.robot.commands.CameraCommandGroup;
 import org.usfirst.frc.team5987.robot.commands.TurnToTargetCommand;
 
 import edu.wpi.first.wpilibj.Joystick;
@@ -70,6 +71,6 @@ public class OI {
 	// until it is finished as determined by it's isFinished method.
 	// button.whenReleased(new ExampleCommand());
 	public OI() {
-		leftCenterBtn.whenPressed(new TurnToTargetCommand());
+		leftCenterBtn.whenPressed(new CameraCommandGroup());
 	}
 }
