@@ -103,6 +103,6 @@ public abstract class PIDTurnCommand extends Command {
      */
     protected abstract void printValues();
     public double getError(){
-    	return updateSetpoint() - updateAngle();
+    	return updateSetpoint() - updateAngle()-startingAngle;
     }
 }

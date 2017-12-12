@@ -56,8 +56,9 @@ public class GenericTestCommand extends PIDTurnCommand {
 
 	@Override
 	protected boolean checkFinished() {
-//		return Math.abs(getError())<0.9;
-		return false;
+	if(getKD()!=0)
+		return (Math.abs(getError()) < 1.0 && pid.getD()/getKD()<0.4);
+	return Math.abs(getError()) < 1.0;
 	}
 
 	@Override
