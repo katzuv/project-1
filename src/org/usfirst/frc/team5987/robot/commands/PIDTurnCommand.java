@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  *
  */
 public abstract class PIDTurnCommand extends Command {
-	protected double DELAY;
+	protected double DELAY = 0.005;
 	protected double startingAngle;
 	protected MiniPID pid;
 	Timer timer = new Timer();
@@ -60,7 +60,7 @@ public abstract class PIDTurnCommand extends Command {
     }
     
     protected double getOutput(){
-    	return pid.getOutput(updateAngle(), updateSetpoint());
+    	return pid.getOutput(updateAngle()-startingAngle, updateSetpoint());
     }
     /**
      * updates the MiniPID class.

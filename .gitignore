@@ -58,3 +58,6 @@ local.properties
 build/*
 dist/*
 >>>>>>> robot2
+*.jar
+*.class
+*.class

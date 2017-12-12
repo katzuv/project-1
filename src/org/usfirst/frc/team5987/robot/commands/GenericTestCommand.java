@@ -69,7 +69,7 @@ public class GenericTestCommand extends PIDTurnCommand {
 	@Override
 	protected void printValues(){
     	SmartDashboard.putNumber("error", getError());
-    	SmartDashboard.putNumber("errorRotation", getError());
+    	SmartDashboard.putNumber("currentP", pid.getP());
     	
 	}
 	private double cameraToCenterAngle(double camAngle, double camDistance){
