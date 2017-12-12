@@ -58,3 +58,6 @@ local.properties
 build/*
 dist/*
 >>>>>>> robot2
+dist/FRCUserProgram.jar
+build/org/usfirst/frc/team5987/robot/Robot.class
+*.class
