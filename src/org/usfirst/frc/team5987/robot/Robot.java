@@ -47,7 +47,7 @@ public class Robot extends IterativeRobot {
 	 * the robot is disabled.
 	 */
 	public void disabledInit() {
-		
+		driveSubsystem.drive(0, 0);
 	}
 
 	public void disabledPeriodic() {
