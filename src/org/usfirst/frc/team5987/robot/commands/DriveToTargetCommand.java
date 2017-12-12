@@ -1,6 +1,7 @@
 package org.usfirst.frc.team5987.robot.commands;
 
 import org.usfirst.frc.team5987.robot.Robot;
+import org.usfirst.frc.team5987.robot.RobotMap;
 import org.usfirst.frc.team5987.robot.subsystems.DrivingSubsystem;
 
 import auxiliary.MiniPID;
@@ -53,12 +54,12 @@ public class DriveToTargetCommand extends Command {
 		initLeftEncoder = driveSubsystem.getLeftEncoder();
 		initRightEncoder = driveSubsystem.getRightEncoder();
 		initDistanceFromTarget = SmartDashboard.getNumber("driveInitDistance", 3);
-		leftkP = SmartDashboard.getNumber("leftDriveKp", 0.15);
-		leftKi = SmartDashboard.getNumber("leftDriveKi", 0);
-		leftKd = SmartDashboard.getNumber("leftDriveKd", 0);
-		rightkP = SmartDashboard.getNumber("rightDriveKp", 0.20);
-		rightKi = SmartDashboard.getNumber("rightDriveKi", 0);
-		rightKd = SmartDashboard.getNumber("rightDriveKd", 0);
+		leftkP = SmartDashboard.getNumber("leftDriveKp", RobotMap.leftDriveKp);
+		leftKi = SmartDashboard.getNumber("leftDriveKi", RobotMap.leftDriveKi);
+		leftKd = SmartDashboard.getNumber("leftDriveKd", RobotMap.leftDriveKd);
+		rightkP = SmartDashboard.getNumber("rightDriveKp", RobotMap.rightDriveKp);
+		rightKi = SmartDashboard.getNumber("rightDriveKi", RobotMap.rightDriveKi);
+		rightKd = SmartDashboard.getNumber("rightDriveKd", RobotMap.rightDriveKd);
 		leftPid = new MiniPID(leftkP, leftKi, leftKd);
 		rightPid = new MiniPID(rightkP, rightKi, rightKd);
 		leftPid.setDirection(true);
@@ -71,7 +72,7 @@ public class DriveToTargetCommand extends Command {
 		SmartDashboard.putNumber("leftDriveKd", leftKd);
 		SmartDashboard.putNumber("rightDriveKp", rightkP);
 		SmartDashboard.putNumber("rightDriveKi", rightKi);
-		SmartDashboard.putNumber("rightDriveKi", rightKd);
+		SmartDashboard.putNumber("rightDriveKd", rightKd);
 		SmartDashboard.putNumber("driveLeftError", leftError);
 		SmartDashboard.putNumber("driveRightError", rightError);
 
