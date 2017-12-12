@@ -4,7 +4,6 @@ import org.usfirst.frc.team5987.robot.Robot;
 import org.usfirst.frc.team5987.robot.subsystems.DrivingSubsystem;
 
 import auxiliary.MiniPID;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -15,8 +14,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class DriveToTargetCommand extends Command {
 	DrivingSubsystem driveSubsystem;
-	
-	
 
 	public DriveToTargetCommand() {
 		// Use requires() here to declare subsystem dependencies
@@ -25,18 +22,18 @@ public class DriveToTargetCommand extends Command {
 		driveSubsystem = Robot.driveSubsystem;
 	}
 
-	double kP = SmartDashboard.getNumber("driveKp", 0.15);
-	double kI = SmartDashboard.getNumber("driveKi", 0);
-	double kD = SmartDashboard.getNumber("driveKd", 0);
+	double leftkP;
+	double leftKi;
+	double leftKd;
+	double rightkP;
+	double rightKi;
+	double rightKd;
+	MiniPID leftPid;
+	MiniPID rightPid;
 
-	MiniPID leftPid = new MiniPID(kP, kI, kD);
-	MiniPID rightPid = new MiniPID(kP, kI, kD);
-	Timer time = new Timer();
-	Timer speed = new Timer();
-	double leftEncoderDelta = 0;
-	double rightEncoderDelta = 0;
-	boolean reachedTarget = false;
-	double initLeftEncoder, initRightEncoder, initDistanceFromTarget;
+	double leftEncoderDelta;
+	double rightEncoderDelta;
+	double initLeftEncoder, initRightEncoder, initDistanceFromTarget, leftError, rightError;
 
 	/**
 	 * Initializes the encoders values and the distances from the target. Gets
@@ -46,16 +43,39 @@ public class DriveToTargetCommand extends Command {
 	private void init() {
 		initLeftEncoder = driveSubsystem.getLeftEncoder();
 		initRightEncoder = driveSubsystem.getRightEncoder();
-		initDistanceFromTarget = SmartDashboard.getNumber("distance", 3);
-		System.out.println("START");
+		initDistanceFromTarget = SmartDashboard.getNumber("driveInitDistance", 3);
 	}
 
 	// Called just before this Command runs the first time
 	protected void initialize() {
-		init();
+		// init();
 		SmartDashboard.putString("State", "START");
-		time.reset();
-		time.start();
+		initLeftEncoder = driveSubsystem.getLeftEncoder();
+		initRightEncoder = driveSubsystem.getRightEncoder();
+		initDistanceFromTarget = SmartDashboard.getNumber("driveInitDistance", 3);
+		leftkP = SmartDashboard.getNumber("leftDriveKp", 0.15);
+		leftKi = SmartDashboard.getNumber("leftDriveKi", 0);
+		leftKd = SmartDashboard.getNumber("leftDriveKd", 0);
+		rightkP = SmartDashboard.getNumber("rightDriveKp", 0.20);
+		rightKi = SmartDashboard.getNumber("rightDriveKi", 0);
+		rightKd = SmartDashboard.getNumber("rightDriveKd", 0);
+		leftPid = new MiniPID(leftkP, leftKi, leftKd);
+		rightPid = new MiniPID(rightkP, rightKi, rightKd);
+		leftPid.setDirection(true);
+		rightPid.setDirection(true);
+		SmartDashboard.putNumber("leftEncoder", initLeftEncoder);
+		SmartDashboard.putNumber("rightEncoder", initRightEncoder);
+		SmartDashboard.putNumber("driveInitDistance", initDistanceFromTarget);
+		SmartDashboard.putNumber("leftDriveKp", leftkP);
+		SmartDashboard.putNumber("leftDriveKi", leftKi);
+		SmartDashboard.putNumber("leftDriveKd", leftKd);
+		SmartDashboard.putNumber("rightDriveKp", rightkP);
+		SmartDashboard.putNumber("rightDriveKi", rightKi);
+		SmartDashboard.putNumber("rightDriveKi", rightKd);
+		SmartDashboard.putNumber("driveLeftError", leftError);
+		SmartDashboard.putNumber("driveRightError", rightError);
+
+		SmartDashboard.putString("State", "START");
 	}
 
 	// Called repeatedly when this Command is scheduled to run
@@ -67,33 +87,33 @@ public class DriveToTargetCommand extends Command {
 		/**
 		 * The distance the right motor has driven.
 		 */
-		rightEncoderDelta = driveSubsystem.getLeftEncoder() - initRightEncoder;
+		rightEncoderDelta = driveSubsystem.getRightEncoder() - initRightEncoder;
 		/**
 		 * The output from the PID controllers for the left motor.
 		 */
-		double leftOutput = leftPid.getOutput(leftEncoderDelta, 1);
+		double leftOutput = leftPid.getOutput(leftEncoderDelta, initDistanceFromTarget);
 		/**
 		 * The output from the PID controllers for the right motor.
 		 */
-		double rightOutput = leftPid.getOutput(rightEncoderDelta, 1);
+		double rightOutput = rightPid.getOutput(rightEncoderDelta, initDistanceFromTarget);
 
-		if (initDistanceFromTarget != SmartDashboard.getNumber("distance", 1)) {
-			init();
-		}
-		driveSubsystem.drive(leftOutput, rightOutput);
-		SmartDashboard.putNumber("Right output", rightOutput);
-		SmartDashboard.putNumber("Left output", leftOutput);
-		SmartDashboard.putNumber("Right output", rightOutput);
-		SmartDashboard.putNumber("left error", initDistanceFromTarget - leftOutput);
-		SmartDashboard.putNumber("right error", initDistanceFromTarget - rightOutput);
-		time.delay(0.05);
+		leftError = initDistanceFromTarget - leftEncoderDelta;
+		rightError = initDistanceFromTarget - rightEncoderDelta;
+		
+		driveSubsystem.drive(-leftOutput, -rightOutput);
+		SmartDashboard.putNumber("driveLeftOutput", leftOutput);
+		SmartDashboard.putNumber("driveRightOutput", rightOutput);
+		SmartDashboard.putNumber("driveLeftError", leftError);
+		SmartDashboard.putNumber("driveRightError", rightError);
+		
+		SmartDashboard.putNumber("driveLeftIOutput", leftPid.getI());
+		SmartDashboard.putNumber("driveRightIOutput", rightPid.getI());
+		Timer.delay(0.05);
 	}
 
 	// Make this return true when this Command no longer needs to run execute()
 	protected boolean isFinished() {
-		if ((initDistanceFromTarget - leftEncoderDelta - 1) < 0.2 && (initDistanceFromTarget - rightEncoderDelta - 1) < 0.2) {
-			return true;
-		}
+		// return leftError < 0.05 && rightError < 0.05;
 		return false;
 	}
 
