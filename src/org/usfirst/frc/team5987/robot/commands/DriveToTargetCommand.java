@@ -23,33 +23,17 @@ public class DriveToTargetCommand extends Command {
 		driveSubsystem = Robot.driveSubsystem;
 	}
 
-	double leftkP;
-	double leftKi;
-	double leftKd;
-	double rightkP;
-	double rightKi;
-	double rightKd;
-	MiniPID leftPid;
-	MiniPID rightPid;
-
-	double leftEncoderDelta;
-	double rightEncoderDelta;
-	double initLeftEncoder, initRightEncoder, initDistanceFromTarget, leftError, rightError;
-
-	/**
-	 * Initializes the encoders values and the distances from the target. Gets
-	 * the initial encoder values from the driveSubsystem and gets the distance
-	 * from the SmartDashboard in meters.
-	 */
-	private void init() {
-		initLeftEncoder = driveSubsystem.getLeftEncoder();
-		initRightEncoder = driveSubsystem.getRightEncoder();
-		initDistanceFromTarget = SmartDashboard.getNumber("driveInitDistance", 3);
-	}
+	double leftkP, leftKi, leftKd;
+	double rightkP, rightKi, rightKd;
+	MiniPID leftPid, rightPid;
+	double leftEncoderDelta, rightEncoderDelta;
+	double initLeftEncoder, initRightEncoder;
+	double initDistanceFromTarget;
+	double leftError, rightError;
+	double leftOutput, rightOutput;
 
 	// Called just before this Command runs the first time
 	protected void initialize() {
-		// init();
 		SmartDashboard.putString("State", "START");
 		initLeftEncoder = driveSubsystem.getLeftEncoder();
 		initRightEncoder = driveSubsystem.getRightEncoder();
@@ -75,7 +59,7 @@ public class DriveToTargetCommand extends Command {
 		SmartDashboard.putNumber("rightDriveKd", rightKd);
 		SmartDashboard.putNumber("driveLeftError", leftError);
 		SmartDashboard.putNumber("driveRightError", rightError);
-
+		
 		SmartDashboard.putString("State", "START");
 	}
 
@@ -92,11 +76,11 @@ public class DriveToTargetCommand extends Command {
 		/**
 		 * The output from the PID controllers for the left motor.
 		 */
-		double leftOutput = leftPid.getOutput(leftEncoderDelta, initDistanceFromTarget);
+		leftOutput = leftPid.getOutput(leftEncoderDelta, initDistanceFromTarget);
 		/**
 		 * The output from the PID controllers for the right motor.
 		 */
-		double rightOutput = rightPid.getOutput(rightEncoderDelta, initDistanceFromTarget);
+		rightOutput = rightPid.getOutput(rightEncoderDelta, initDistanceFromTarget);
 
 		leftError = initDistanceFromTarget - leftEncoderDelta;
 		rightError = initDistanceFromTarget - rightEncoderDelta;
@@ -114,8 +98,7 @@ public class DriveToTargetCommand extends Command {
 
 	// Make this return true when this Command no longer needs to run execute()
 	protected boolean isFinished() {
-		// return leftError < 0.05 && rightError < 0.05;
-		return false;
+		return leftError < 0.1 && rightError < 0.1 && leftOutput < 0.4 && rightOutput < 0.4;
 	}
 
 	// Called once after isFinished returns true
