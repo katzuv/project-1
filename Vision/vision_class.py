@@ -4,7 +4,7 @@ import math
 from networktables import NetworkTables
 from flask import Flask, render_template, Response
 from threading import _start_new_thread
-is_stream=True
+is_stream=False
 
 class Vision:
     def __init__(self):
@@ -47,12 +47,13 @@ class Vision:
         self.stream=[]
         self.cal_fun = {'area': ("cv2.contourArea(c)", False), 'extent': ("cv2.contourArea(c) / (cv2.minAreaRect(c)[1][0] * cv2.minAreaRect(c)[1][1])", False),
                         "height": ("cv2.boundingRect(c)[3]", True), 'hull': ("cv2.contourArea(c) / cv2.contourArea(cv2.convexHull(c))", False)}
+        self.sees_target = False
         """
         Summary: Get SmartDashboard. 
         # Currently unavailable. Instead, create and read a file where all values are stored.
         # BTW, why is this one a different color?
         """
-        NetworkTables.initialize(server="roborio-5987-frc.local")
+        NetworkTables.initialize(server="192.168.43.223")
         self.table = NetworkTables.getTable("SmartDashboard")
         file = open('Values.val','r')
         execution=file.read()
@@ -66,7 +67,7 @@ class Vision:
         self.set_item("Method", self.find_by_s)
         self.set_item("Focal length", self.focal_l_f)
         self.set_item("Real height", self.real_height_f)
-        self.set_item("Sees target", False)
+        self.set_item("Sees target", self.sees_target)
     def set_item(self, key, value):
         """
         Summary: Add a value to SmartDashboard.
@@ -112,6 +113,7 @@ class Vision:
         if len(self.contours) > 0 and self.get_item("Draw contours", self.draw_contours_b):
             for x in range(0, len(self.contours)):
                 cv2.drawContours(self.show_frame, self.contours[x], -1, (255, 0, 0), 3)
+                cv2.rectangle(self.frame, (cv2.boundingRect(self.contours[x])[0], cv2.boundingRect(self.contours[x])[1]), (cv2.boundingRect(self.contours[x])[0]+cv2.boundingRect(self.contours[x])[2], cv2.boundingRect(self.contours[x])[1]+cv2.boundingRect(self.contours[x])[3]),(0,255,0),2)
                 # Draws hulls on the frame, if asked so on SmartDashboard
                 if len(self.hulls) > 0 and self.get_item("Draw hulls", self.draw_hulls_b):
                     defects = cv2.convexityDefects(self.contours[x], self.hulls[x])
@@ -214,7 +216,8 @@ def analyse():
         vision.contours=list(contours)
         vision.get_contours()
         if (len(vision.contours)) > 0:
-            vision.set_item("Sees target", True)
+            vision.sees_target = True
+            vision.set_item("Sees target", vision.sees_target)
             vision.draw_contours()
             vision.find_center()
             vision.get_angle()
@@ -233,7 +236,7 @@ def show(stream):
     global vision
     global app
     if stream:
-        app.run(host='10.59.87.215', debug=False)
+        app.run(host='192.168.43.112', debug=False)
     else:
         while not stop:
             cv2.imshow('Frame',vision.show_frame)
