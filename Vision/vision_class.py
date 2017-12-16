@@ -1,10 +1,43 @@
+#------------getting the ip------------------------------------------------------
+
+import socket
+
+ip=socket.gethostbyname(socket.gethostname())
+
+#------------launch options------------------------------------------------------
+
+import sys
+
+camera=0
+if len(sys.argv) < 2:
+    is_stream = False
+    is_local = False
+else:
+    if '-s' in sys.argv or '--stream' in sys.argv:
+        is_stream = True
+    else:
+        is_stream=False
+
+    if '-l' in sys.argv or '--local' in sys.argv:
+        is_local = True
+    else:
+        is_local=False
+
+    if '-h' in sys.argv or '--help' in sys.argv:
+        print('Usage: python3 vision_class.py [-s / --stream] [-l / --local] {camera port}')
+        exit(0)
+    for arg in sys.argv:
+        try:
+           camera=int(arg)
+        except:
+            pass
+
+#-----------------------------Starting The Vision Class--------------------------------------------------------------
+
 import cv2
 import numpy as np
 import math
 from networktables import NetworkTables
-from flask import Flask, render_template, Response
-from threading import _start_new_thread
-is_stream=False
 
 class Vision:
     def __init__(self):
@@ -26,8 +59,9 @@ class Vision:
             * stream: The stream we may send to a server.
             * cal_fun: The dictionary of functions by which we can calibrate and filter contours. The first variable in
             the tuple is the string command, the second one is whether it needs to be average'd.
+            * sees_target: A boolean that says whether the target was found.
         """
-        self.cam = cv2.VideoCapture(0)
+        self.cam = cv2.VideoCapture(camera)
         self.distance=0
         # self.cam.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0)
         # self.cam.set(cv2.CAP_PROP_AUTOFOCUS, 0)
@@ -53,12 +87,14 @@ class Vision:
         # Currently unavailable. Instead, create and read a file where all values are stored.
         # BTW, why is this one a different color?
         """
-        NetworkTables.initialize(server="192.168.43.223")
+        NetworkTables.initialize(server="roboRIO-{team_number}-FRC.local".format(team_number=5987))
         self.table = NetworkTables.getTable("SmartDashboard")
+        # Reads the latest values of the files
         file = open('Values.val','r')
         execution=file.read()
         exec(execution)
         file.close()
+        # Sends all values to SmartDashboard
         self.set_item("Command", self.command_s)
         self.set_item("Draw contours", self.draw_contours_b)
         self.set_item("Draw hulls", self.draw_hulls_b)
@@ -111,14 +147,18 @@ class Vision:
     def draw_contours(self):
         # Draws contours on the frame, if asked so on SmartDashboard
         if len(self.contours) > 0 and self.get_item("Draw contours", self.draw_contours_b):
+            # Works with indexes instead of the contours themselves
             for x in range(0, len(self.contours)):
+                # Draws all contours in blue
                 cv2.drawContours(self.show_frame, self.contours[x], -1, (255, 0, 0), 3)
+                # Draws a green rectangle around the target.
                 cv2.rectangle(self.frame, (cv2.boundingRect(self.contours[x])[0], cv2.boundingRect(self.contours[x])[1]), (cv2.boundingRect(self.contours[x])[0]+cv2.boundingRect(self.contours[x])[2], cv2.boundingRect(self.contours[x])[1]+cv2.boundingRect(self.contours[x])[3]),(0,255,0),2)
                 # Draws hulls on the frame, if asked so on SmartDashboard
                 if len(self.hulls) > 0 and self.get_item("Draw hulls", self.draw_hulls_b):
+                    # Finds all defects in the outline compared to the hull
                     defects = cv2.convexityDefects(self.contours[x], self.hulls[x])
                     for i in range(defects.shape[0]):
-                        s, e, f, d = defects[i, 0]
+                        s, e, f, _ = defects[i, 0]
                         start = tuple(self.contours[x][s][0])
                         end = tuple(self.contours[x][e][0])
                         far = tuple(self.contours[x][f][0])
@@ -127,6 +167,7 @@ class Vision:
 
     def dirode(self):
         # Dialates and erodes the mask to reduce static and make the image clearer
+        # The kernel both functions will use
         kernel = np.ones((5, 5), dtype=np.uint8)
         self.mask=cv2.dilate(self.mask, kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
         self.mask=cv2.erode(self.mask, kernel, iterations = self.get_item("DiRode iterations", self.dirode_iterations_i))
@@ -137,9 +178,12 @@ class Vision:
         self.centers_y.clear()
         if self.get_item("Find center", self.find_center_b) and len(self.contours) > 0:
             for c in self.contours:
+                # Uses the center of the minimum enclosing circle
                 (x, y), _ = cv2.minEnclosingCircle(c)
+                # Adds both x and y values to the lists
                 self.centers_x.append(x)
                 self.centers_y.append(y)
+            # Finds the average center of all contours and draws it on the frame
             self.center = (int((sum(self.centers_x) / len(self.centers_x))), (int(sum(self.centers_y) / len(self.centers_y))))
             cv2.putText(self.show_frame, "o {}".format(self.center), self.center, self.font, 0.5, 255)
 
@@ -154,48 +198,62 @@ class Vision:
                 # Separates the instruction into method and margin
                 fun = fun.split(",")
                 if fun[0] is not '' and len(self.contours) > 0:
+                    # Creates a list of all appropriate contours
                     possible_fit = []
                     for c in self.contours:
                         if float(fun[2]) > float(eval(self.cal_fun[fun[0]][0])) > float(fun[1]):
                             possible_fit.append(c)
                             if fun[0] == 'hull':
                                 self.hulls.append(cv2.convexHull(c, returnPoints=False))
+                    # Updates the contour list
                     self.contours = possible_fit
 
     def get_angle(self):
-        # Returns the angle of the center of contours from the camera
-        # Currently linear. Will be more accurate after focal length is obtained
+        # Returns the angle of the center of contours from the camera based on the focal length and trigonometry
         self.angle = math.atan((self.center[0]-self.frame.shape[1]/2)/self.get_item("Focal length", self.focal_l_f))*(180/math.pi)
         cv2.putText(self.show_frame, "Angle: {}".format(self.angle), (5, 15), self.font, 0.5, 255)
 
     def get_distance(self):
+        # Returns the distance of the target from camera based on trigonometry, focal length and its known real height
         alpha=-math.atan((self.center[1]-self.frame.shape[1]/2)/self.get_item("Focal length", self.focal_l_f))
         try:
             self.distance=self.get_item("Real height", self.real_height_f)/math.tan(alpha)
         except ZeroDivisionError:
             pass
-        cv2.putText(vision.show_frame, "distance: " + str(self.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
-        cv2.putText(vision.show_frame, "alpha: " + str(alpha*(180/math.pi)), (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(self.show_frame, "distance: " + str(self.distance), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(self.show_frame, "alpha: " + str(alpha*(180/math.pi)), (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
+
+#-----------Setting Global Variables For Thread-work----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 global vision
 global stop
-global app
-app = Flask(__name__)
 stop=False
 vision=Vision()
-vision.key=-1
+
+#-------Getting The Stream Ready------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+from flask import Flask, render_template, Response
+
+app = Flask(__name__)
+
 @app.route('/')
 def index():
-    global stop
-    global vision
     return render_template('index.html')
 
 @app.route('/video_feed')
 def video_feed():
-    global stop
-    global vision
     return Response(gen(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+def gen():
+    global stop
+    global vision
+    while not stop:
+        jpg=cv2.imencode('.jpg',vision.show_frame)[1].tostring()
+        yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + jpg + b'\r\n')
+        key=cv2.waitKey(1)
+
+#--------------Setting Up The Thread Functions-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 def get_frame():
     global stop
@@ -205,6 +263,7 @@ def get_frame():
         # cv2.line(vision.frame,(0,int(vision.frame.shape[0]/2)),(int(vision.frame.shape[1]),int(vision.frame.shape[0]/2)),(0,0,0),int(1),int(1))
         vision.show_frame=vision.frame.copy()
         key=cv2.waitKey(1)
+
 def analyse():
     global stop
     global vision
@@ -223,21 +282,13 @@ def analyse():
             vision.get_angle()
             vision.get_distance()
 
-def gen():
-    global stop
-    global vision
-    while not stop:
-        jpg=cv2.imencode('.jpg',vision.show_frame)[1].tostring()
-        yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + jpg + b'\r\n')
-        key=cv2.waitKey(1)
 
-def show(stream):
+def show():
     global stop
     global vision
-    global app
-    if stream:
-        app.run(host='192.168.43.112', debug=False)
-    else:
+    if is_stream:
+        app.run(host=ip, debug=False)
+    if is_local:
         while not stop:
             cv2.imshow('Frame',vision.show_frame)
             cv2.imshow('Mask', vision.mask)
@@ -246,6 +297,11 @@ def show(stream):
                 cv2.destroyAllWindows()
                 stop=True
 
-_start_new_thread(get_frame,())
-_start_new_thread(analyse,())
-show(is_stream)
+#---------------Starting The Threads--------------------------------------------------------------------------------------------------
+import threading
+threading._start_new_thread(get_frame,())
+threading._start_new_thread(analyse,())
+show()
+if not is_local and not is_stream:
+    _=input('Press Enter To End It All')
+stop=True
