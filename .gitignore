@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 bin/
 tmp/
 *.tmp
@@ -53,11 +52,16 @@ local.properties
 *.class
 *.ctxt
 
-=======
 /bin/
 build/*
 dist/*
->>>>>>> robot2
+
 dist/FRCUserProgram.jar
 build/org/usfirst/frc/team5987/robot/Robot.class
+
+*.jar
 *.class
+>>>>>>> refs/remotes/origin/generic-turn
+*.class
+build/org/usfirst/frc/team5987/robot/RobotMap.class
+*.jar

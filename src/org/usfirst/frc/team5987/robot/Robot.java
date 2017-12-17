@@ -33,6 +33,7 @@ public class Robot extends IterativeRobot {
 	public void robotInit() {
 		ahrs = new AHRS(SPI.Port.kMXP);
 		oi = new OI();
+
 		SmartDashboard.putNumber("kpRotation", RobotMap.ConstantP);
 		SmartDashboard.putNumber("kiRotation", RobotMap.ConstantI);
 		SmartDashboard.putNumber("kdRotation", RobotMap.ConstantD);
