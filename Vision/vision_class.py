@@ -6,11 +6,14 @@ for interface in ni.interfaces():
     if ip is None:
         try:
             ip=ni.ifaddresses(interface)[ni.AF_INET][0]['addr']
+            start=ip.split('.')[0]
+            if start == '127':
+                ip=None
         except KeyError:
             pass
     else:
         break
-print(ip)
+
 #------------launch options------------------------------------------------------
 
 import sys
@@ -112,6 +115,7 @@ class Vision:
         self.set_item("Focal length", self.focal_l_f)
         self.set_item("Real height", self.real_height_f)
         self.set_item("Sees target", self.sees_target)
+	self.set_item("Raspberry PI IP", ip)
     def set_item(self, key, value):
         """
         Summary: Add a value to SmartDashboard.
