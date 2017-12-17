@@ -1,14 +1,22 @@
 #------------getting the ip------------------------------------------------------
 
-import socket
-
-ip=socket.gethostbyname(socket.gethostname())
-
+import netifaces as ni
+ip=None
+for interface in ni.interfaces():
+    if ip is None:
+        try:
+            ip=ni.ifaddresses(interface)[ni.AF_INET][0]['addr']
+        except KeyError:
+            pass
+    else:
+        break
+print(ip)
 #------------launch options------------------------------------------------------
 
 import sys
 
 camera=0
+
 if len(sys.argv) < 2:
     is_stream = False
     is_local = False
@@ -291,13 +299,14 @@ def show():
     if is_local:
         while not stop:
             cv2.imshow('Frame',vision.show_frame)
-            cv2.imshow('Mask', vision.mask)
+            cv2.imshow('Mask', vbtwision.mask)
             vision.key=cv2.waitKey(1)
             if vision.key is ord('q'):
                 cv2.destroyAllWindows()
                 stop=True
 
 #---------------Starting The Threads--------------------------------------------------------------------------------------------------
+
 import threading
 threading._start_new_thread(get_frame,())
 threading._start_new_thread(analyse,())
